@@ -20,8 +20,6 @@ Recommended target:
 Copy the whole project folder, including:
 
 - `main.cpp`
-- `main_logic_test.cpp`
-- `main_runtime_test.cpp`
 - `thread.h`
 - `scheduler.cpp`
 - `events.cpp`
