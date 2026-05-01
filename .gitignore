@@ -1,0 +1,28 @@
+# executables
+*.exe
+*.txt
+
+# object files
+*.o
+*.obj
+
+# build folders
+build/
+cmake-build-*/
+
+# VS Code
+.vscode/
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+
+# temporary
+*.log
+
+# MSYS2 generated
+*.dll
+
+# OpenCV / SDL runtime copies
+SDL2.dll
+opencv*.dll

@@ -30,7 +30,6 @@ Copy the whole project folder, including:
 - `visualization_stub.cpp`
 - `README.md`
 - `DESIGN.md`
-- `question.txt`
 - `run_live.bat`
 
 ### Dependency setup on another machine
@@ -153,15 +152,15 @@ This matches the current implementation rather than the earlier draft design.
 
 ## Project Files
 
-- [main.cpp](/c:/Users/ZhiyangHuang/Desktop/Code练习/2026/CSCI%2049392%20OS/Blowing/main.cpp:1): normal interactive application entry
-- [main_logic_test.cpp](/c:/Users/ZhiyangHuang/Desktop/Code练习/2026/CSCI%2049392%20OS/Blowing/main_logic_test.cpp:1): core logic smoke test
-- [main_runtime_test.cpp](/c:/Users/ZhiyangHuang/Desktop/Code练习/2026/CSCI%2049392%20OS/Blowing/main_runtime_test.cpp:1): real runtime startup smoke test
-- [thread.h](/c:/Users/ZhiyangHuang/Desktop/Code练习/2026/CSCI%2049392%20OS/Blowing/thread.h:1): shared enums, structs, and APIs
-- [scheduler.cpp](/c:/Users/ZhiyangHuang/Desktop/Code练习/2026/CSCI%2049392%20OS/Blowing/scheduler.cpp:1): scheduler, queues, blocking, wakeup, timer, event loop
-- [events.cpp](/c:/Users/ZhiyangHuang/Desktop/Code练习/2026/CSCI%2049392%20OS/Blowing/events.cpp:1): event queue and latest-value buffer storage
-- [simulation.cpp](/c:/Users/ZhiyangHuang/Desktop/Code练习/2026/CSCI%2049392%20OS/Blowing/simulation.cpp:1): camera, mic, render, and particle task logic
-- [render_sdl.cpp](/c:/Users/ZhiyangHuang/Desktop/Code练习/2026/CSCI%2049392%20OS/Blowing/render_sdl.cpp:1): SDL2 window, webcam background, HUD, and particle visualization
-- [visualization_stub.cpp](/c:/Users/ZhiyangHuang/Desktop/Code练习/2026/CSCI%2049392%20OS/Blowing/visualization_stub.cpp:1): visualization stub used by logic-only test
+- [main.cpp]: normal interactive application entry
+- [main_logic_test.cpp]: core logic smoke test
+- [main_runtime_test.cpp]: real runtime startup smoke test
+- [thread.h]: shared enums, structs, and APIs
+- [scheduler.cpp]: scheduler, queues, blocking, wakeup, timer, event loop
+- [events.cpp]: event queue and latest-value buffer storage
+- [simulation.cpp]: camera, mic, render, and particle task logic
+- [render_sdl.cpp]: SDL2 window, webcam background, HUD, and particle visualization
+- [visualization_stub.cpp]: visualization stub used by logic-only test
 
 ## Current Visual Behavior
 
