@@ -30,7 +30,6 @@ Copy the whole project folder, including:
 - `visualization_stub.cpp`
 - `README.md`
 - `DESIGN.md`
-- `run_live.bat`
 
 ### Dependency setup on another machine
 
@@ -50,19 +49,7 @@ If `pacman -Syu` asks you to restart the shell, close the window, reopen `MSYS2 
 Interactive app:
 
 ```bash
-C:\msys64\mingw64\bin\g++.exe -std=c++17 -Wall -Wextra -pedantic main.cpp scheduler.cpp events.cpp simulation.cpp render_sdl.cpp -IC:\msys64\mingw64\include\SDL2 -IC:\msys64\mingw64\include\opencv4 -LC:\msys64\mingw64\lib -lmingw32 -lSDL2main -lSDL2 -lopencv_videoio -lopencv_objdetect -lopencv_imgproc -lopencv_imgcodecs -lopencv_core -o dandelion_live.exe
-```
-
-Core logic smoke test:
-
-```bash
-C:\msys64\mingw64\bin\g++.exe -std=c++17 -Wall -Wextra -pedantic main_logic_test.cpp scheduler.cpp events.cpp simulation.cpp visualization_stub.cpp -o dandelion_logic_test.exe
-```
-
-Runtime smoke test:
-
-```bash
-C:\msys64\mingw64\bin\g++.exe -std=c++17 -Wall -Wextra -pedantic main_runtime_test.cpp scheduler.cpp events.cpp simulation.cpp render_sdl.cpp -IC:\msys64\mingw64\include\SDL2 -IC:\msys64\mingw64\include\opencv4 -LC:\msys64\mingw64\lib -lmingw32 -lSDL2main -lSDL2 -lopencv_videoio -lopencv_objdetect -lopencv_imgproc -lopencv_imgcodecs -lopencv_core -o dandelion_runtime_test.exe
+C:\msys64\mingw64\bin\g++.exe -std=c++17 -Wall -Wextra -pedantic main.cpp scheduler.cpp events.cpp simulation.cpp render_sdl.cpp -IC:\msys64\mingw64\include\SDL2 -IC:\msys64\mingw64\include\opencv4 -LC:\msys64\mingw64\lib -lmingw32 -lSDL2main -lSDL2 -lopencv_videoio -lopencv_objdetect -lopencv_imgproc -lopencv_imgcodecs -lopencv_core -o blowing_main.exe
 ```
 
 ### Run on another machine
@@ -70,25 +57,7 @@ C:\msys64\mingw64\bin\g++.exe -std=c++17 -Wall -Wextra -pedantic main_runtime_te
 If `C:\msys64\mingw64\bin` is already in `PATH`:
 
 ```bash
-.\dandelion_live.exe
-```
-
-If it is not in `PATH`, use:
-
-```bash
-.\run_live.bat
-```
-
-Core logic test:
-
-```bash
-.\dandelion_logic_test.exe
-```
-
-Runtime smoke test:
-
-```bash
-.\dandelion_runtime_test.exe
+.\blowing_main.exe
 ```
 
 ### Remote deployment checklist
@@ -96,7 +65,7 @@ Runtime smoke test:
 - build succeeds on the target machine
 - `dandelion_logic_test.exe` prints `logic test passed`
 - `dandelion_runtime_test.exe` prints `runtime smoke test passed`
-- webcam background opens in `dandelion_live.exe`
+- webcam background opens in `blowing_main.exe`
 - `MIC DEV` shows a valid input device name
 - switching `1T / 2T / 3T` still works
 
@@ -207,89 +176,11 @@ Instead:
 - above half, seeds are distributed around a full ring
 - below half, seeds collapse into the current half-ring style
 
-## Build
-
-### Interactive app
-
-```bash
-C:\msys64\mingw64\bin\g++.exe -std=c++17 -Wall -Wextra -pedantic main.cpp scheduler.cpp events.cpp simulation.cpp render_sdl.cpp -IC:\msys64\mingw64\include\SDL2 -IC:\msys64\mingw64\include\opencv4 -LC:\msys64\mingw64\lib -lmingw32 -lSDL2main -lSDL2 -lopencv_videoio -lopencv_objdetect -lopencv_imgproc -lopencv_imgcodecs -lopencv_core -o dandelion_live.exe
-```
-
-### Core logic smoke test
-
-```bash
-C:\msys64\mingw64\bin\g++.exe -std=c++17 -Wall -Wextra -pedantic main_logic_test.cpp scheduler.cpp events.cpp simulation.cpp visualization_stub.cpp -o dandelion_logic_test.exe
-```
-
-### Runtime smoke test
-
-```bash
-C:\msys64\mingw64\bin\g++.exe -std=c++17 -Wall -Wextra -pedantic main_runtime_test.cpp scheduler.cpp events.cpp simulation.cpp render_sdl.cpp -IC:\msys64\mingw64\include\SDL2 -IC:\msys64\mingw64\include\opencv4 -LC:\msys64\mingw64\lib -lmingw32 -lSDL2main -lSDL2 -lopencv_videoio -lopencv_objdetect -lopencv_imgproc -lopencv_imgcodecs -lopencv_core -o dandelion_runtime_test.exe
-```
-
-## Run
-
-Interactive app:
-
-```bash
-.\dandelion_live.exe
-```
-
-Core logic test:
-
-```bash
-.\dandelion_logic_test.exe
-```
-
-Runtime smoke test:
-
-```bash
-.\dandelion_runtime_test.exe
-```
-
 ## Test Plan
 
-### 1. Core logic test
+### 1. Interactive test
 
-Use `dandelion_logic_test.exe`.
-
-Checks:
-
-- thread mode switching
-- actual created thread count per mode
-- reset path
-- camera event path
-- mic event path
-- spawn budget update
-- seeds-left update
-- border-hit event handling
-
-Expected result:
-
-- process exits cleanly
-- output ends with `logic test passed`
-
-### 2. Runtime smoke test
-
-Use `dandelion_runtime_test.exe`.
-
-Checks:
-
-- SDL init
-- webcam/mic initialization path
-- thread creation path
-- reset path
-- one frame of input/render processing
-
-Expected result:
-
-- process exits cleanly
-- output ends with `runtime smoke test passed`
-- created thread count is `1` in default startup mode
-
-### 3. Interactive test
-
-Use `dandelion_live.exe`.
+Use `blowing_main.exe`.
 
 Checks:
 
