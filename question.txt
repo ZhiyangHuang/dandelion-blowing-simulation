@@ -1,0 +1,342 @@
+Project Status Summary
+
+1. Current project state
+
+The project has reached a usable prototype stage, but it is not yet in the final correct task-flow state.
+
+What is already completed:
+
+- the user-level scheduler is implemented
+- thread states READY / RUNNING / BLOCKED / FINISHED are implemented
+- priority scheduling is implemented
+- same-priority tasks do not preempt each other
+- higher-priority tasks can interrupt lower-priority tasks at scheduling points
+- the latest-value buffer is implemented
+- SDL2 visualization is implemented
+- webcam background is implemented
+- microphone capture HUD is implemented
+- 1T / 2T / 3T mode switching is implemented
+- real created thread count now matches the selected mode
+- core logic smoke test and runtime smoke test are implemented
+
+Current test files:
+
+- main_logic_test.cpp
+- main_runtime_test.cpp
+
+2. Main remaining design problem
+
+The current runtime still does not fully match the intended sequential task-flow design.
+
+Expected design:
+
+- camera task monitors input
+- when mouth-open is detected, camera task should end or block cleanly
+- then microphone task should become the active monitoring task
+- when microphone input ends, microphone task should stop monitoring
+- then particle task should become the active processing task
+- when particle processing ends, the system should restart camera monitoring
+
+Current incorrect behavior:
+
+- the camera monitoring path is still effectively always alive
+- particle creation is mostly triggered by mic event detection, not by a clean camera-to-mic handoff
+- the camera task is not clearly finishing or giving up monitoring before mic begins
+- the microphone task is not clearly giving up monitoring before particle-only processing begins
+- after particle completion, camera does not need a real restart because camera monitoring was never truly stopped
+
+This means:
+
+- the scheduler itself is mostly working
+- but the task lifecycle boundaries are still not strict enough
+- the current system behaves more like shared continuous watchers than clean staged tasks
+
+3. Why Python + MediaPipe should be requested
+
+Python editing and MediaPipe integration should be approved for the next stage.
+
+Reason:
+
+- the current OpenCV Haar cascade approach is too weak for reliable mouth-open state transitions
+- mouth-open and mouth-closed detection are not stable enough to drive correct task handoff
+- MediaPipe Face Mesh can provide a more reliable mouth landmark set
+- that will make it easier to define:
+  - mouth center
+  - mouth opening ratio
+  - mouth-open threshold
+  - mouth-closed threshold
+- once those signals are stable, camera task lifecycle can be controlled correctly
+
+Requested next engineering direction:
+
+- allow Python support for a MediaPipe-based camera input bridge
+- use Python + MediaPipe Face Mesh to produce stable mouth state and mouth center data
+- pass only the latest camera result back into the existing scheduler runtime
+
+Important architecture rule:
+
+- do not replace the scheduler core
+- do not replace the event bus
+- use Python + MediaPipe only as an input-layer helper
+- the OS-style runtime should remain the source of truth
+
+4. Required next correction
+
+The next implementation phase must enforce strict staged task ownership.
+
+Target task-flow:
+
+Single-thread mode:
+
+- camera monitors
+- mouth-open detected
+- camera stops monitoring
+- mic monitors
+- sound active
+- particle task starts
+- sound ends
+- mic stops monitoring
+- particle task completes
+- camera restarts
+
+Two-thread mode:
+
+- one thread handles camera/mic input phase switching
+- one thread handles render
+- particle work still follows the scheduler rules
+
+Three-thread mode:
+
+- camera thread
+- mic thread
+- render thread
+- particle work scheduled as low-priority worker logic
+
+5. Current conclusion
+
+The project is not blocked by the scheduler anymore.
+The remaining blocker is task lifecycle correctness.
+
+The next important step is not cosmetic UI work.
+The next important step is:
+
+- strict task stop/start boundaries
+- stable mouth-open detection
+- stable mic start/end detection
+- proper camera -> mic -> particle -> camera cycle
+
+6. Immediate recommendation
+
+Next development step should be:
+
+- approve Python usage
+- integrate MediaPipe Face Mesh through Python
+- use it to fix camera task lifecycle and task handoff
+
+Only after that should the final visual and interaction polish continue.
+
+7. MediaPipe integration design note
+
+Goal:
+
+If Python is allowed, Python will only be used as an input-task bridge for MediaPipe Face Mesh.
+It will not replace the current C++ scheduler, event bus, or thread-state logic.
+
+Core rule:
+
+Python is only responsible for producing stable camera task data.
+C++ remains responsible for:
+
+- thread creation
+- scheduling
+- priority control
+- blocking / wakeup
+- event dispatch
+- particle task execution
+- runtime state transitions
+
+This ensures the OS project remains a scheduler-driven design, not a Python-driven application.
+
+8. Planned Python role
+
+The Python file will behave like a sensor task, not like a controller.
+
+Python will do only these things:
+
+- open webcam
+- run MediaPipe Face Mesh
+- detect face landmarks
+- compute mouth center
+- compute mouth-open ratio
+- compute mouth-open / mouth-closed state
+- output only the latest stable result
+
+Python will not do these things:
+
+- no scheduling
+- no event ordering
+- no task switching
+- no particle simulation
+- no render control
+- no runtime state transitions
+
+In other words:
+
+Python is a producer.
+C++ is still the operating core.
+
+9. Planned data contract between Python and C++
+
+Python should output only a small latest-value state packet.
+
+Example fields:
+
+- timestamp
+- face_detected
+- mouth_center_x
+- mouth_center_y
+- mouth_open_ratio
+- mouth_open_state
+
+Optional:
+
+- confidence
+- face_box_center
+- head_direction_hint
+
+C++ will read only the newest available record and overwrite old ones.
+This matches the current latest-value buffer design.
+
+So the design remains consistent:
+
+- Python produces latest camera state
+- C++ stores latest camera state
+- C++ scheduler decides what task wakes up next
+
+10. Recommended integration method
+
+Recommended architecture:
+
+Python process:
+
+- runs MediaPipe Face Mesh loop
+- writes latest camera state to a lightweight IPC channel
+
+C++ process:
+
+- periodically reads latest camera state during camera task execution
+- converts it into internal events:
+  - CAMERA_DETECTED
+  - MOUTH_OPEN
+  - CAMERA_CLOSE or return-to-blocked state
+
+Recommended IPC options, from simplest to safest:
+
+1. localhost socket
+2. named pipe
+3. shared file with latest snapshot
+
+Best first version:
+
+- localhost socket or named pipe
+
+Reason:
+
+- low latency
+- simple message format
+- no need to embed Python inside the C++ runtime
+- easiest to keep process boundaries clear
+
+11. Why this does not break the current thread design
+
+The current concern is:
+
+"If Python is added, will it bypass the user-level thread design?"
+
+Answer:
+
+No, if Python is restricted to input production only.
+
+The thread logic remains correct because:
+
+- Python does not create runtime tasks in C++
+- Python does not decide which task runs
+- Python does not wake tasks directly except by supplying input data
+- C++ camera task still decides when to block and when to emit runtime events
+- C++ mic task still decides when wind starts and stops
+- C++ particle task still decides when particle processing begins and ends
+
+So the true task lifecycle still belongs to the C++ runtime.
+
+12. Planned corrected task lifecycle after MediaPipe
+
+Single-thread mode target:
+
+- camera task reads latest MediaPipe result
+- if mouth is closed:
+  - remain blocked / waiting
+- if mouth opens:
+  - emit MOUTH_OPEN
+  - camera task stops monitoring
+  - switch to mic task phase
+- mic task monitors sound
+- when sound starts:
+  - emit MIC_START
+  - begin particle task
+- when sound ends:
+  - emit MIC_END
+  - mic task stops monitoring
+  - particle task continues until done
+- after particle task completes:
+  - restart camera task
+
+The important part is:
+
+Python only improves the mouth signal.
+The handoff still happens in C++.
+
+13. File plan if Python is approved
+
+Expected new files:
+
+- python_mediapipe_bridge.py
+- camera_bridge_protocol.txt or camera_bridge.md
+
+Possible C++ additions:
+
+- camera_bridge.cpp
+- camera_bridge.h
+
+But these should remain helper files only.
+They should not replace:
+
+- scheduler.cpp
+- simulation.cpp
+- events.cpp
+
+14. Safety rule for implementation
+
+To preserve the original OS project goal, the following rule should be enforced:
+
+"Python may produce input state, but only C++ may turn that state into scheduled runtime behavior."
+
+This is the key constraint that keeps the project aligned with:
+
+- user-level threading
+- priority scheduling
+- event-driven state changes
+- latest-value buffering
+
+15. Final integration statement
+
+If Python use is approved, I will implement MediaPipe as an external input task only.
+I will not move the scheduler, thread logic, event logic, or particle logic into Python.
+
+The final system will still be:
+
+- C++ scheduler core
+- C++ event-driven runtime
+- C++ thread-state transitions
+- Python only as camera perception support
+
+This keeps the project faithful to the original operating-systems design objective.
