@@ -1,5 +1,6 @@
 *.exe
 package-lock.json
+run_live.bat
 question.txt
 *.dll
 *.log
