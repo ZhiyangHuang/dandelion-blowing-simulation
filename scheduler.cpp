@@ -1,265 +1,283 @@
 #include "thread.h"
-#include <iostream>
+
+#include <algorithm>
+#include <deque>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
-using namespace std;
+namespace {
 
-static queue<Thread*> high_q;
-static queue<Thread*> mid_q;
-static queue<Thread*> low_q;
-static queue<Thread*> blocked_q;
-static vector<Thread*> threads;
+struct StoredTask {
+    std::unique_ptr<Task> task;
+};
 
-static void clear_ready_queue(queue<Thread*>& q) {
-    while (!q.empty()) {
-        q.pop();
+int g_next_task_id = 1;
+int g_frame_index = 0;
+int g_thread_mode = 1;
+bool g_visualization_enabled = false;
+std::vector<RuntimeThread> g_threads;
+std::deque<StoredTask> g_p1_queue;
+std::deque<StoredTask> g_p2_queue;
+std::deque<StoredTask> g_p3_queue;
+
+std::vector<TaskRecord> snapshot_queue(const std::deque<StoredTask>& queue) {
+    std::vector<TaskRecord> records;
+    records.reserve(queue.size());
+    for (const StoredTask& entry : queue) {
+        records.push_back({
+            entry.task->id,
+            entry.task->type,
+            entry.task->priority,
+            entry.task->state,
+            entry.task->support_resume,
+            entry.task->name,
+        });
+    }
+    return records;
+}
+
+ThreadState thread_state_for_slot(int index, int active_threads) {
+    return index < active_threads ? ThreadState::IDLE : ThreadState::SLEEPING;
+}
+
+void rebuild_thread_pool() {
+    int active_threads = std::clamp(g_thread_mode, 1, 3);
+    g_threads.clear();
+    g_threads.reserve(3);
+    for (int index = 0; index < 3; ++index) {
+        RuntimeThread thread;
+        thread.id = index + 1;
+        thread.state = thread_state_for_slot(index, active_threads);
+        thread.label = "Thread" + std::to_string(index + 1);
+        g_threads.push_back(thread);
     }
 }
 
-static Thread* current_thread = nullptr;
-static int thread_id_counter = 0;
-static bool need_preempt = false;
-static bool scheduler_paused = false;
-
-static void destroy_all_threads() {
-    current_thread = nullptr;
-    need_preempt = false;
-    scheduler_paused = false;
-    clear_ready_queue(high_q);
-    clear_ready_queue(mid_q);
-    clear_ready_queue(low_q);
-    clear_ready_queue(blocked_q);
-
-    for (Thread* t : threads) {
-        delete t;
+std::deque<StoredTask>& queue_for_priority(PriorityLevel priority) {
+    if (priority == PriorityLevel::P1_SYSTEM) {
+        return g_p1_queue;
     }
-    threads.clear();
-    thread_id_counter = 0;
+    if (priority == PriorityLevel::P2_FUNCTIONAL) {
+        return g_p2_queue;
+    }
+    return g_p3_queue;
 }
 
-static void enqueue(Thread* t) {
-    if (!t || t->state == FINISHED) {
+bool has_same_type(const std::deque<StoredTask>& queue, TaskType type) {
+    return !queue.empty() && queue.back().task->type == type;
+}
+
+void enqueue_with_policy(std::unique_ptr<Task> task) {
+    std::deque<StoredTask>& queue = queue_for_priority(task->priority);
+
+    if (task->priority == PriorityLevel::P1_SYSTEM) {
+        if (has_same_type(queue, task->type)) {
+            queue.pop_back();
+        } else if (queue.size() >= 2) {
+            queue.pop_front();
+        }
+        queue.push_back({std::move(task)});
         return;
     }
 
-    if (t->priority == HIGH) {
-        high_q.push(t);
-    } else if (t->priority == MEDIUM) {
-        mid_q.push(t);
-    } else {
-        low_q.push(t);
-    }
-}
-
-static Thread* pick_next() {
-    if (!high_q.empty()) {
-        Thread* t = high_q.front();
-        high_q.pop();
-        return t;
-    }
-    if (!mid_q.empty()) {
-        Thread* t = mid_q.front();
-        mid_q.pop();
-        return t;
-    }
-    if (!low_q.empty()) {
-        Thread* t = low_q.front();
-        low_q.pop();
-        return t;
-    }
-    return nullptr;
-}
-
-static bool has_ready_task() {
-    return !high_q.empty() || !mid_q.empty() || !low_q.empty();
-}
-
-static bool has_higher_priority_ready_task(Priority current_priority) {
-    if (current_priority == LOW) {
-        return !high_q.empty() || !mid_q.empty();
-    }
-    if (current_priority == MEDIUM) {
-        return !high_q.empty();
-    }
-    return false;
-}
-
-static bool should_preempt(Thread* running) {
-    if (!running || !has_ready_task()) {
-        return false;
-    }
-    return has_higher_priority_ready_task(running->priority);
-}
-
-static void dispatch_pending_events() {
-    Event event;
-    while (poll_event(event)) {
-        handle_event(event);
-    }
-}
-
-Thread* create_thread(const string& name, function<void(Thread*)> func, Priority p) {
-    Thread* t = new Thread();
-    t->id = thread_id_counter++;
-    t->name = name;
-    t->state = READY;
-    t->priority = p;
-    t->func = func;
-    threads.push_back(t);
-    enqueue(t);
-    return t;
-}
-
-void rebuild_runtime_threads(ThreadMode mode) {
-    destroy_all_threads();
-    set_thread_mode(mode);
-    cam = nullptr;
-    mic = nullptr;
-    render_ui = nullptr;
-
-    if (mode == THREAD_MODE_1) {
-        cam = create_thread("camera", camera, LOW);
-    } else if (mode == THREAD_MODE_2) {
-        cam = create_thread("camera", camera, LOW);
-        render_ui = create_thread("render", render_thread, MEDIUM);
-    } else {
-        cam = create_thread("camera", camera, LOW);
-        mic = create_thread("mic", mic_thread, HIGH);
-        render_ui = create_thread("render", render_thread, MEDIUM);
+    if (task->priority == PriorityLevel::P2_FUNCTIONAL) {
+        if (!queue.empty() && queue.front().task->type == task->type) {
+            queue.pop_front();
+        } else if (queue.size() >= 5) {
+            queue.pop_back();
+        }
+        queue.push_back({std::move(task)});
+        return;
     }
 
-    reset_simulation();
+    if (queue.size() >= 100) {
+        queue.pop_front();
+    }
+    queue.push_back({std::move(task)});
 }
 
-int created_thread_count() {
-    return static_cast<int>(threads.size());
+StoredTask take_next_task() {
+    if (!g_p1_queue.empty()) {
+        StoredTask entry = std::move(g_p1_queue.back());
+        g_p1_queue.pop_back();
+        return entry;
+    }
+    if (!g_p2_queue.empty()) {
+        StoredTask entry = std::move(g_p2_queue.front());
+        g_p2_queue.pop_front();
+        return entry;
+    }
+    StoredTask entry = std::move(g_p3_queue.front());
+    g_p3_queue.pop_front();
+    return entry;
 }
 
-const vector<Thread*>& all_threads() {
-    return threads;
+bool has_pending_tasks() {
+    return !g_p1_queue.empty() || !g_p2_queue.empty() || !g_p3_queue.empty();
 }
 
-void reset_scheduler_state() {
-    clear_ready_queue(high_q);
-    clear_ready_queue(mid_q);
-    clear_ready_queue(low_q);
-    clear_ready_queue(blocked_q);
+}  // namespace
 
-    for (Thread* t : threads) {
-        if (t->state == READY) {
-            enqueue(t);
+PlaceholderTask::PlaceholderTask(TaskType task_type,
+                                 PriorityLevel task_priority,
+                                 std::string task_name,
+                                 bool resumable) {
+    type = task_type;
+    priority = task_priority;
+    name = std::move(task_name);
+    support_resume = resumable;
+}
+
+void PlaceholderTask::execute() {
+    state = TaskState::FINISHED;
+}
+
+void bootstrap_runtime() {
+    g_next_task_id = 1;
+    g_frame_index = 0;
+    g_thread_mode = 1;
+    g_p1_queue.clear();
+    g_p2_queue.clear();
+    g_p3_queue.clear();
+    rebuild_thread_pool();
+    reset_simulation_world();
+}
+
+void reset_runtime() {
+    g_frame_index = 0;
+    g_p1_queue.clear();
+    g_p2_queue.clear();
+    g_p3_queue.clear();
+    rebuild_thread_pool();
+    reset_simulation_world();
+}
+
+void seed_startup_flow() {
+    submit_task(make_placeholder_task(
+        TaskType::START,
+        PriorityLevel::P1_SYSTEM,
+        "StartTask"));
+    submit_task(make_placeholder_task(
+        TaskType::RESET,
+        PriorityLevel::P1_SYSTEM,
+        "ResetTask"));
+    submit_task(make_placeholder_task(
+        TaskType::CAMERA,
+        PriorityLevel::P2_FUNCTIONAL,
+        "CameraTask",
+        true));
+    submit_task(make_placeholder_task(
+        TaskType::BATCH_PARTICLE_EXECUTION,
+        PriorityLevel::P2_FUNCTIONAL,
+        "BatchParticleExecutionTask",
+        true));
+}
+
+int submit_task(std::unique_ptr<Task> task) {
+    if (!task) {
+        return -1;
+    }
+
+    task->id = g_next_task_id++;
+    task->state = TaskState::CREATED;
+    enqueue_with_policy(std::move(task));
+    return g_next_task_id - 1;
+}
+
+std::unique_ptr<Task> make_placeholder_task(TaskType type,
+                                            PriorityLevel priority,
+                                            const std::string& name,
+                                            bool support_resume) {
+    return std::make_unique<PlaceholderTask>(type, priority, name, support_resume);
+}
+
+void set_thread_mode(int mode) {
+    g_thread_mode = std::clamp(mode, 1, 3);
+    rebuild_thread_pool();
+    render_data().ui.thread_mode = g_thread_mode;
+}
+
+int current_thread_mode() {
+    return g_thread_mode;
+}
+
+void scheduler_tick() {
+    ++g_frame_index;
+
+    for (RuntimeThread& thread : g_threads) {
+        if (thread.state != ThreadState::SLEEPING && thread.state != ThreadState::CLOSED) {
+            thread.state = ThreadState::IDLE;
+            thread.bound_task_id = -1;
         }
     }
-}
 
-void yield() {
-    current_thread->state = READY;
-    current_thread->time_slice = 0;
-    enqueue(current_thread);
-}
-
-void block() {
-    current_thread->state = BLOCKED;
-    blocked_q.push(current_thread);
-}
-
-void wakeup(Thread* t) {
-    if (!t || t->state != BLOCKED) {
+    if (!has_pending_tasks()) {
+        render_data().ui.scheduler_state = "Idle";
         return;
     }
 
-    t->state = READY;
-    enqueue(t);
-}
-
-void lock(Mutex* m) {
-    if (!m->locked) {
-        m->locked = true;
-        return;
-    }
-
-    m->waiters.push(current_thread);
-    current_thread->state = BLOCKED;
-}
-
-void unlock(Mutex* m) {
-    if (!m->waiters.empty()) {
-        Thread* t = m->waiters.front();
-        m->waiters.pop();
-        t->state = READY;
-        enqueue(t);
-        return;
-    }
-
-    m->locked = false;
-}
-
-void timer_event() {
-    if (current_thread) {
-        current_thread->time_slice++;
-        if (current_thread->priority == LOW && current_thread->time_slice >= 2) {
-            cout << "[TIMER IRQ] preempt low priority task\n";
-            need_preempt = true;
-        }
-    }
-
-    simulation_tick();
-}
-
-void event_loop() {
-    while (visualization_running()) {
-        process_visual_input();
-        dispatch_pending_events();
-        timer_event();
-
-        if (scheduler_paused) {
-            render_visual_frame();
+    for (RuntimeThread& thread : g_threads) {
+        if (thread.state == ThreadState::SLEEPING || thread.state == ThreadState::CLOSED) {
             continue;
         }
-
-        if (current_thread &&
-            current_thread->state == RUNNING &&
-            should_preempt(current_thread)) {
-            cout << "[SCHED] higher priority task preempts lower priority task\n";
-            current_thread->state = READY;
-            current_thread->time_slice = 0;
-            enqueue(current_thread);
-            current_thread = nullptr;
+        if (!has_pending_tasks()) {
+            break;
         }
 
-        Thread* next = pick_next();
-        if (!next) {
-            render_visual_frame();
-            continue;
+        StoredTask entry = take_next_task();
+        Task& task = *entry.task;
+        thread.state = ThreadState::RUNNING;
+        thread.bound_task_id = task.id;
+        task.state = task.support_resume ? TaskState::RUNNING : TaskState::FINISHED;
+        task.execute();
+
+        if (task.state != TaskState::FINISHED && task.support_resume) {
+            task.state = TaskState::REQUEUED;
+            enqueue_with_policy(std::move(entry.task));
         }
-
-        current_thread = next;
-        current_thread->state = RUNNING;
-        current_thread->started = true;
-        current_thread->func(current_thread);
-        render_visual_frame();
-
-        if (need_preempt && current_thread && current_thread->state == RUNNING) {
-            need_preempt = false;
-            current_thread->state = READY;
-            current_thread->time_slice = 0;
-            enqueue(current_thread);
-        } else if (current_thread && current_thread->state == RUNNING) {
-            current_thread->state = READY;
-            enqueue(current_thread);
-        }
-        current_thread = nullptr;
-
-        if (simulation_done()) {
-            set_render_state(UI_WAITING);
-        }
-
-        if (!visualization_running()) {
-            cout << "Visualization closed\n";
-            return;
-        }
-
-        render_visual_frame();
     }
-    cout << "Visualization closed\n";
+
+    render_data().ui.scheduler_state = has_pending_tasks() ? "Dispatching" : "Idle";
+}
+
+const std::vector<RuntimeThread>& runtime_threads() {
+    return g_threads;
+}
+
+const std::vector<TaskRecord>& queued_p1_tasks() {
+    static std::vector<TaskRecord> snapshot;
+    snapshot = snapshot_queue(g_p1_queue);
+    return snapshot;
+}
+
+const std::vector<TaskRecord>& queued_p2_tasks() {
+    static std::vector<TaskRecord> snapshot;
+    snapshot = snapshot_queue(g_p2_queue);
+    return snapshot;
+}
+
+const std::vector<TaskRecord>& queued_p3_tasks() {
+    static std::vector<TaskRecord> snapshot;
+    snapshot = snapshot_queue(g_p3_queue);
+    return snapshot;
+}
+
+SchedulerSnapshot scheduler_snapshot() {
+    SchedulerSnapshot snapshot;
+    snapshot.frame_index = g_frame_index;
+    snapshot.thread_mode = g_thread_mode;
+    snapshot.visualization_enabled = g_visualization_enabled;
+    snapshot.remaining_particles = current_render_data().ui.remaining_particles;
+    snapshot.power = current_render_data().ui.power;
+    snapshot.threads = g_threads;
+    snapshot.p1_queue = snapshot_queue(g_p1_queue);
+    snapshot.p2_queue = snapshot_queue(g_p2_queue);
+    snapshot.p3_queue = snapshot_queue(g_p3_queue);
+    return snapshot;
+}
+
+void set_visualization_running(bool running) {
+    g_visualization_enabled = running;
 }

@@ -1,31 +1,20 @@
 #include "thread.h"
 
-static queue<Event> event_q;
-static LatestValueBuffer latest;
-static RenderState render_state = UI_START;
+#include <string>
+#include <vector>
 
-void emit_event(EventType type, int value, const string& label) {
-    event_q.push({type, value, label});
+namespace {
+
+std::vector<std::string> g_runtime_notes;
+
+}  // namespace
+
+void push_runtime_note(const std::string& note) {
+    g_runtime_notes.push_back(note);
 }
 
-bool poll_event(Event& event) {
-    if (event_q.empty()) {
-        return false;
-    }
-
-    event = event_q.front();
-    event_q.pop();
-    return true;
-}
-
-LatestValueBuffer& latest_buffer() {
-    return latest;
-}
-
-RenderState current_render_state() {
-    return render_state;
-}
-
-void set_render_state(RenderState state) {
-    render_state = state;
+std::vector<std::string> drain_runtime_notes() {
+    std::vector<std::string> notes = g_runtime_notes;
+    g_runtime_notes.clear();
+    return notes;
 }

@@ -1,48 +1,39 @@
 #include "thread.h"
+
 #include <cassert>
 #include <iostream>
 
 int main() {
-    std::cout.setf(std::ios::unitbuf);
+    bootstrap_runtime();
 
-    runtime_config().initial_seed_count = 100;
-    rebuild_runtime_threads(THREAD_MODE_1);
+    assert(current_thread_mode() == 1);
+    assert(runtime_threads().size() == 3);
+    assert(current_render_data().particles.size() == 100);
+    assert(current_render_data().ui.remaining_particles == 100);
 
-    assert(current_thread_mode() == THREAD_MODE_1);
-    assert(created_thread_count() == 1);
-    assert(latest_buffer().seeds_total == 100);
-    assert(latest_buffer().seeds_left == 100);
+    seed_startup_flow();
+    SchedulerSnapshot before_tick = scheduler_snapshot();
+    assert(before_tick.p1_queue.size() == 2);
+    assert(before_tick.p2_queue.size() == 2);
+    assert(before_tick.p3_queue.empty());
 
-    handle_event({CAMERA_OPEN, 1, "test_camera"});
-    assert(current_render_state() == UI_INPUT_ACTIVE);
+    scheduler_tick();
+    SchedulerSnapshot after_tick = scheduler_snapshot();
+    assert(after_tick.frame_index == 1);
+    assert(after_tick.p1_queue.size() == 1);
 
-    latest_buffer().wind_strength = 0.55f;
-    int seeds_before = latest_buffer().seeds_left;
-    handle_event({MIC_START, 1, "test_mic"});
-    assert(latest_buffer().spawn_budget > 0);
-    assert(latest_buffer().seeds_left < seeds_before);
-    assert(wind_on);
+    set_thread_mode(3);
+    SchedulerSnapshot threaded = scheduler_snapshot();
+    assert(threaded.thread_mode == 3);
+    assert(threaded.threads[0].state == ThreadState::IDLE);
+    assert(threaded.threads[2].state == ThreadState::IDLE);
 
-    handle_event({MIC_END, 0, "test_mic_end"});
-    assert(!wind_on);
-    assert(current_render_state() == UI_WAITING || current_render_state() == UI_RUNNING);
-
-    handle_event({BUFFER_EMPTY, 0, "test_particles_done"});
-    assert(current_render_state() == UI_INPUT_ACTIVE || current_render_state() == UI_WAITING);
-
-    rebuild_runtime_threads(THREAD_MODE_2);
-    assert(current_thread_mode() == THREAD_MODE_2);
-    assert(created_thread_count() == 2);
-    handle_event({PARTICLE_HIT_BORDER, 1, "test_border"});
-    assert(current_render_state() == UI_INPUT_ACTIVE || current_render_state() == UI_PAUSED);
-
-    rebuild_runtime_threads(THREAD_MODE_3);
-    assert(current_thread_mode() == THREAD_MODE_3);
-    assert(created_thread_count() == 3);
-
-    handle_event({UI_RESET, 0, "test_reset"});
-    assert(latest_buffer().spawn_budget == 0);
-    assert(latest_buffer().seeds_left == 100);
+    reset_runtime();
+    SchedulerSnapshot reset = scheduler_snapshot();
+    assert(reset.frame_index == 0);
+    assert(reset.p1_queue.empty());
+    assert(reset.remaining_particles == 100);
+    assert(current_render_data().ui.banner == "DandelionOS Scaffold");
 
     std::cout << "logic test passed\n";
     return 0;

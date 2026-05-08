@@ -1,184 +1,170 @@
 #ifndef THREAD_H
 #define THREAD_H
 
-#include <functional>
-#include <queue>
+#include <deque>
+#include <memory>
 #include <string>
 #include <vector>
 
-using namespace std;
-
-enum State {
-    READY,
+enum class ThreadState {
+    IDLE,
     RUNNING,
-    BLOCKED,
-    FINISHED
+    SLEEPING,
+    CLOSED,
+    WAITING
 };
 
-enum Priority {
-    HIGH,
-    MEDIUM,
-    LOW
+enum class TaskState {
+    CREATED,
+    RUNNING,
+    INTERRUPTED,
+    FINISHED,
+    REQUEUED
 };
 
-enum EventType {
-    CAMERA_OPEN,
-    CAMERA_CLOSE,
-    CAMERA_DETECTED,
-    MOUTH_OPEN,
-    MIC_START,
-    MIC_END,
-    PARTICLE_SPAWN,
-    PARTICLE_HIT_BORDER,
-    BUFFER_OVERFLOW,
-    BUFFER_EMPTY,
-    RENDER_UPDATE,
-    UI_RESET,
-    UI_STOP,
-    UI_CONTINUE
+enum class PriorityLevel {
+    P1_SYSTEM,
+    P2_FUNCTIONAL,
+    P3_PARTICLE
 };
 
-enum RenderState {
-    UI_START,
-    UI_CAMERA_LOADING,
-    UI_INPUT_ACTIVE,
-    UI_RUNNING,
-    UI_WAITING,
-    UI_PAUSED
+enum class TaskType {
+    START,
+    RESET,
+    CAMERA,
+    MICROPHONE,
+    GENERATE_PARTICLE,
+    BREEZE,
+    CHANGE_DANDELION,
+    BATCH_PARTICLE_EXECUTION,
+    SINGLE_PARTICLE,
+    EXIT_APP,
+    PLACEHOLDER
 };
 
-enum ThreadMode {
-    THREAD_MODE_1 = 1,
-    THREAD_MODE_2 = 2,
-    THREAD_MODE_3 = 3
-};
-
-struct Event {
-    EventType type;
-    int value = 0;
-    string label;
-};
-
-struct ParticleState {
+struct ParticleRenderData {
+    int id = 0;
     float x = 0.0f;
     float y = 0.0f;
-    float vx = 0.0f;
-    float vy = 0.0f;
-    float dir_x = 1.0f;
-    float dir_y = 0.0f;
-    float force = 0.0f;
-    float size = 4.0f;
-    int life = 0;
+    bool attached = true;
     bool active = false;
-    bool stopped_by_border = false;
 };
 
-struct Thread {
-    int id;
-    State state;
-    Priority priority;
-
-    bool started = false;
-    int time_slice = 0;
-    int pc = 0;
-
-    float x = 0.0f;
-    float y = 0.0f;
-    float vx = 0.0f;
-    float vy = 0.0f;
-    int life = 4;
-    float dir_x = 1.0f;
-    float dir_y = 0.0f;
-    float force = 0.0f;
-    float size = 4.0f;
-    bool active = false;
-    bool stopped_by_border = false;
-
-    string name;
-    function<void(Thread*)> func;
+struct BackgroundLayer {
+    std::string theme = "meadow";
 };
 
-struct Mutex {
-    bool locked = false;
-    queue<Thread*> waiters;
-};
-
-struct LatestValueBuffer {
-    int spawn_budget = 0;
-    int max_spawn_budget = 100;
-    int overflow_count = 0;
-    bool mouth_open = false;
-    bool wind_active = false;
-    bool buffer_paused = false;
+struct CameraLayer {
+    bool enabled = false;
+    bool mouth_detected = false;
     float mouth_x = 0.5f;
     float mouth_y = 0.5f;
-    float wind_strength = 0.0f;
-    float wind_dir_x = 1.0f;
-    float wind_dir_y = 0.0f;
-    int seeds_total = 100;
-    int seeds_left = 100;
 };
 
-struct RuntimeConfig {
-    ThreadMode thread_mode = THREAD_MODE_1;
-    bool camera_background_enabled = true;
-    bool mouth_control_enabled = true;
-    bool mic_input_enabled = true;
-    int initial_seed_count = 100;
-    float mic_upper_threshold = 0.040f;
-    float mic_lower_threshold = 0.018f;
+struct WindLayer {
+    bool active = false;
+    float power = 0.1f;
 };
 
-Thread* create_thread(const string& name, function<void(Thread*)> func, Priority p);
-void rebuild_runtime_threads(ThreadMode mode);
-int created_thread_count();
+struct UIRenderData {
+    std::string banner = "Scaffold";
+    std::string scheduler_state = "Idle";
+    int thread_mode = 1;
+    int remaining_particles = 100;
+    float power = 0.1f;
+};
 
-void yield();
-void block();
-void wakeup(Thread* t);
+struct RenderData {
+    BackgroundLayer sky_grass_layer;
+    CameraLayer camera_layer;
+    WindLayer wind_layer;
+    std::vector<ParticleRenderData> particles;
+    UIRenderData ui;
+};
 
-void lock(Mutex* m);
-void unlock(Mutex* m);
+struct RuntimeThread {
+    int id = 0;
+    ThreadState state = ThreadState::IDLE;
+    std::string label;
+    int bound_task_id = -1;
+};
 
-void event_loop();
-void timer_event();
+struct TaskRecord {
+    int id = 0;
+    TaskType type = TaskType::PLACEHOLDER;
+    PriorityLevel priority = PriorityLevel::P2_FUNCTIONAL;
+    TaskState state = TaskState::CREATED;
+    bool support_resume = false;
+    std::string name;
+};
 
-void emit_event(EventType type, int value = 0, const string& label = "");
-bool poll_event(Event& event);
+struct SchedulerSnapshot {
+    int frame_index = 0;
+    int thread_mode = 1;
+    bool visualization_enabled = false;
+    int remaining_particles = 100;
+    float power = 0.1f;
+    std::vector<RuntimeThread> threads;
+    std::vector<TaskRecord> p1_queue;
+    std::vector<TaskRecord> p2_queue;
+    std::vector<TaskRecord> p3_queue;
+};
 
-LatestValueBuffer& latest_buffer();
-RuntimeConfig& runtime_config();
-RenderState current_render_state();
-void set_render_state(RenderState state);
-void set_thread_mode(ThreadMode mode);
-ThreadMode current_thread_mode();
-void set_motion_halted(bool halted);
-bool motion_halted();
+struct Task {
+    int id = 0;
+    TaskType type = TaskType::PLACEHOLDER;
+    PriorityLevel priority = PriorityLevel::P2_FUNCTIONAL;
+    TaskState state = TaskState::CREATED;
+    bool support_resume = false;
+    std::string name;
 
-bool simulation_done();
-void simulation_tick();
-void handle_event(const Event& event);
-void update_particle(Thread* t);
-void reset_simulation();
+    virtual ~Task() = default;
+    virtual void execute() = 0;
+    virtual void resume() { execute(); }
+};
 
-const vector<Thread*>& all_threads();
-void reset_scheduler_state();
+class PlaceholderTask final : public Task {
+public:
+    PlaceholderTask(TaskType task_type,
+                    PriorityLevel task_priority,
+                    std::string task_name,
+                    bool resumable = false);
+
+    void execute() override;
+};
+
+void bootstrap_runtime();
+void reset_runtime();
+void reset_simulation_world();
+void seed_startup_flow();
+void scheduler_tick();
+
+int submit_task(std::unique_ptr<Task> task);
+std::unique_ptr<Task> make_placeholder_task(TaskType type,
+                                            PriorityLevel priority,
+                                            const std::string& name,
+                                            bool support_resume = false);
+
+void set_thread_mode(int mode);
+int current_thread_mode();
+
+const std::vector<RuntimeThread>& runtime_threads();
+const std::vector<TaskRecord>& queued_p1_tasks();
+const std::vector<TaskRecord>& queued_p2_tasks();
+const std::vector<TaskRecord>& queued_p3_tasks();
+SchedulerSnapshot scheduler_snapshot();
+
+RenderData& render_data();
+const RenderData& current_render_data();
+
+void push_runtime_note(const std::string& note);
+std::vector<std::string> drain_runtime_notes();
 
 bool init_visualization();
 void shutdown_visualization();
 void process_visual_input();
 void render_visual_frame();
 bool visualization_running();
-
-void camera(Thread* t);
-void mic_thread(Thread* t);
-void render_thread(Thread* t);
-void particle(Thread* t);
-
-extern Thread* cam;
-extern Thread* mic;
-extern Thread* render_ui;
-
-extern bool wind_on;
+void set_visualization_running(bool running);
 
 #endif

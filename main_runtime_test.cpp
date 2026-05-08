@@ -1,27 +1,29 @@
 #include "thread.h"
+
 #include <cassert>
 #include <iostream>
 
 int main() {
-    std::cout.setf(std::ios::unitbuf);
-    set_thread_mode(THREAD_MODE_1);
-    runtime_config().initial_seed_count = 100;
+    bootstrap_runtime();
+    seed_startup_flow();
 
     if (!init_visualization()) {
-        std::cerr << "runtime smoke test failed: visualization init failed\n";
+        std::cerr << "runtime smoke test failed: visualization scaffold init failed\n";
         return 1;
     }
 
-    rebuild_runtime_threads(THREAD_MODE_1);
     process_visual_input();
+    scheduler_tick();
     render_visual_frame();
 
-    assert(current_thread_mode() == THREAD_MODE_1);
-    assert(created_thread_count() == 1);
-    assert(latest_buffer().seeds_total == 100);
-    assert(latest_buffer().max_spawn_budget == 100);
+    SchedulerSnapshot snapshot = scheduler_snapshot();
+    assert(snapshot.visualization_enabled);
+    assert(snapshot.thread_mode == 1);
+    assert(snapshot.remaining_particles == 100);
 
     shutdown_visualization();
+    assert(!visualization_running());
+
     std::cout << "runtime smoke test passed\n";
     return 0;
 }
