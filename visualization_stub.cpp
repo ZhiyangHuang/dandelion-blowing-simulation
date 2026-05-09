@@ -10,6 +10,7 @@ void shutdown_visualization() {
 }
 
 void process_visual_input() {
+    refresh_bridge_inputs();
 }
 
 void render_visual_frame() {

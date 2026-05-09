@@ -1,6 +1,8 @@
 import json
 import math
+import shutil
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -35,6 +37,21 @@ def clamp(value: float, lo: float, hi: float) -> float:
 def write_packet(packet: dict) -> None:
     TMP_PATH.write_text(json.dumps(packet), encoding="utf-8")
     TMP_PATH.replace(OUT_PATH)
+
+
+def resolve_model_path(original_path: Path) -> Path:
+    if not original_path.exists():
+        return original_path
+
+    ascii_safe = all(ord(ch) < 128 for ch in str(original_path))
+    if ascii_safe:
+        return original_path
+
+    temp_target = Path(tempfile.gettempdir()) / "dandelionos_face_landmarker.task"
+    if (not temp_target.exists() or
+            original_path.stat().st_mtime > temp_target.stat().st_mtime):
+        shutil.copyfile(original_path, temp_target)
+    return temp_target
 
 
 def build_empty_packet(backend: str) -> dict:
@@ -105,6 +122,7 @@ class FaceLandmarkerTracker:
     def __init__(self, model_path: Path) -> None:
         mp_tasks = mp.tasks
         mp_vision = mp.tasks.vision
+        resolved_model_path = resolve_model_path(model_path)
 
         self.backend_name = "python-mediapipe-face-landmarker"
         self.base_options = mp_tasks.BaseOptions
@@ -113,7 +131,7 @@ class FaceLandmarkerTracker:
         self.running_mode = mp_vision.RunningMode
 
         options = self.face_landmarker_options(
-            base_options=self.base_options(model_asset_path=str(model_path)),
+            base_options=self.base_options(model_asset_path=str(resolved_model_path)),
             running_mode=self.running_mode.IMAGE,
             num_faces=1,
             min_tracking_confidence=0.4,
@@ -217,7 +235,10 @@ class StableMouthBridge:
                 return FaceLandmarkerTracker(TASK_PATH)
             except Exception as exc:
                 print(f"face_landmarker.task load failed, fallback to FaceMesh: {exc}", file=sys.stderr)
-        return FaceMeshFallbackTracker()
+        if hasattr(mp, "solutions") and hasattr(mp.solutions, "face_mesh"):
+            return FaceMeshFallbackTracker()
+        raise RuntimeError(
+            "mediapipe face mesh fallback unavailable and face_landmarker.task could not be loaded")
 
     def close(self) -> None:
         self.detector.close()

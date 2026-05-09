@@ -3,6 +3,19 @@ package-lock.json
 question.txt
 *.dll
 *.log
+camera_bridge_latest.json
+camera_bridge_latest.tmp
+microphone_bridge_latest.json
+microphone_bridge_latest.tmp
+__pycache__/
+*.pyc
+close_0.jpg
+close_1.jpg
+open_0.jpg
+open_1.jpg
+huu.m4a
+ahh.m4a
+no voice.m4a
 .vscode/
 .vs/
 build/
