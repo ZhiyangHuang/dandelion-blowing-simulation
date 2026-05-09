@@ -220,6 +220,17 @@ SDL_Color particle_color(const ParticleRenderData& particle) {
     return kParticleAttached;
 }
 
+bool is_resident_p2_type(TaskType type) {
+    switch (type) {
+    case TaskType::CAMERA:
+    case TaskType::MICROPHONE:
+    case TaskType::BATCH_PARTICLE_EXECUTION:
+        return true;
+    default:
+        return false;
+    }
+}
+
 std::string thread_state_label(ThreadState state) {
     switch (state) {
     case ThreadState::RUNNING:
@@ -251,6 +262,19 @@ std::string mouth_label(const RuntimeState& state) {
         return "NO FACE";
     }
     return state.camera_bridge.mouth_open_state ? "OPEN" : "CLOSED";
+}
+
+SDL_Color focus_color(const RenderData& data) {
+    if (data.ui.input_focus_status == "CAMERA FOCUS") {
+        return kThreadIdle;
+    }
+    if (data.ui.input_focus_status == "MIC FOCUS") {
+        return kWindActive;
+    }
+    if (data.ui.input_focus_status == "GATE OPEN") {
+        return kMouthOpen;
+    }
+    return kMutedTextColor;
 }
 
 void submit_visual_hotkey_task(SDL_Keycode key) {
@@ -386,8 +410,11 @@ void render_camera_layer_card(const RuntimeState& state) {
     draw_text(card.x + 14, card.y + 40, state.camera_bridge.backend.empty()
         ? "NO BACKEND"
         : state.camera_bridge.backend.substr(0, std::min<std::size_t>(state.camera_bridge.backend.size(), 18)), kMutedTextColor);
+    draw_text(card.x + 14, card.y + 56,
+        state.camera_bridge.status_text.substr(0, std::min<std::size_t>(state.camera_bridge.status_text.size(), 24)),
+        kMutedTextColor);
 
-    const SDL_Rect viewport = make_rect(card.x + 14, card.y + 72, card.w - 28, card.h - 92);
+    const SDL_Rect viewport = make_rect(card.x + 14, card.y + 86, card.w - 28, card.h - 106);
     fill_rect(viewport, SDL_Color{34, 46, 58, 255});
     stroke_rect(viewport, SDL_Color{78, 103, 124, 255});
 
@@ -484,8 +511,21 @@ void render_status_panel(const RuntimeState& state,
     fill_rect(make_rect(queue_bar.x + p1w, queue_bar.y, p2w, queue_bar.h), SDL_Color{109, 172, 255, 255});
     fill_rect(make_rect(queue_bar.x + p1w + p2w, queue_bar.y, p3w, queue_bar.h), SDL_Color{255, 207, 92, 255});
     y += 26;
+    int resident_p2 = 0;
+    int event_p2 = 0;
+    for (const TaskRecord& record : snapshot.p2_queue) {
+        if (is_resident_p2_type(record.type)) {
+            resident_p2++;
+        } else {
+            event_p2++;
+        }
+    }
     draw_text(panel_x + padding, y, "P1 " + std::to_string(snapshot.p1_queue.size()), kMutedTextColor);
-    draw_text(panel_x + padding + 90, y, "P2 " + std::to_string(snapshot.p2_queue.size()), kMutedTextColor);
+    draw_text(panel_x + padding + 90, y,
+        "P2 " + std::to_string(snapshot.p2_queue.size()) +
+        " R" + std::to_string(resident_p2) +
+        " E" + std::to_string(event_p2),
+        kMutedTextColor);
     draw_text(panel_x + padding + 180, y, "P3 " + std::to_string(snapshot.p3_queue.size()), kMutedTextColor);
     y += 34;
 
@@ -496,6 +536,8 @@ void render_status_panel(const RuntimeState& state,
     draw_text(panel_x + padding, y, "MOUTH " + mouth_label(state), state.camera_bridge.mouth_open_state ? kMouthOpen : kMutedTextColor);
     y += 20;
     draw_text(panel_x + padding, y, "MIC " + microphone_mode_label(state), state.microphone_bridge.voice_detected ? kWindActive : kMutedTextColor);
+    y += 20;
+    draw_text(panel_x + padding, y, "FOCUS " + data.ui.input_focus_status, focus_color(data));
     y += 20;
     draw_text(panel_x + padding, y, "POWER " + std::to_string(static_cast<int>(data.ui.power * 100.0f) / 100.0f), kMutedTextColor);
     y += 32;
@@ -513,13 +555,19 @@ void render_status_panel(const RuntimeState& state,
     y += 22;
     for (std::size_t index = 0; index < snapshot.threads.size(); ++index) {
         const RuntimeThread& thread = snapshot.threads[index];
-        const SDL_Rect row = make_rect(panel_x + padding, y, panel_w - padding * 2, 46);
+        const SDL_Rect row = make_rect(panel_x + padding, y, panel_w - padding * 2, 64);
         fill_rect(row, kPanelAlt);
         stroke_rect(row, thread_state_color(thread.state));
         fill_rect(make_rect(row.x + 6, row.y + 6, 24, row.h - 12), thread_state_color(thread.state));
         draw_text(row.x + 40, row.y + 8, "T" + std::to_string(thread.id) + " " + thread_state_label(thread.state), kTextColor);
-        draw_text(row.x + 40, row.y + 24, thread.last_task_event.substr(0, std::min<std::size_t>(thread.last_task_event.size(), 18)), kMutedTextColor);
-        y += 56;
+        draw_text(row.x + 40, row.y + 24,
+            ("RUN " + thread.bound_task_name).substr(0, std::min<std::size_t>(thread.bound_task_name.size() + 4, 24)),
+            kMutedTextColor);
+        draw_text(row.x + 40, row.y + 40,
+            ("EV " + thread.last_task_event + " / " + thread.last_completed_task_name)
+                .substr(0, 30),
+            kMutedTextColor);
+        y += 74;
     }
 
     draw_text(panel_x + padding, y, "PARTICLES", kTextColor);
@@ -554,6 +602,8 @@ void render_status_panel(const RuntimeState& state,
         }
         return text.substr(0, static_cast<std::size_t>(task_line_width - 3)) + "...";
     };
+    draw_text(panel_x + padding, y, crop_line("FOC " + data.ui.input_focus_status), focus_color(data));
+    y += 18;
     draw_text(panel_x + padding, y, crop_line("CAM " + data.ui.camera_task_status), kMutedTextColor);
     y += 18;
     draw_text(panel_x + padding, y, crop_line("MIC " + data.ui.microphone_task_status), kMutedTextColor);
@@ -568,7 +618,7 @@ void render_status_panel(const RuntimeState& state,
     draw_text(panel_x + padding, y, "EVENT LOG", kTextColor);
     y += 20;
     const std::vector<std::string>& notes = current_runtime_notes();
-    const std::size_t visible_notes = std::min<std::size_t>(notes.size(), 7);
+    const std::size_t visible_notes = std::min<std::size_t>(notes.size(), 10);
     for (std::size_t index = 0; index < visible_notes; ++index) {
         const std::size_t note_index = notes.size() - visible_notes + index;
         draw_text(

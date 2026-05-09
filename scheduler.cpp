@@ -11,6 +11,11 @@
 
 namespace {
 
+constexpr long long kCameraGateHoldMs = 450;
+constexpr int kRrQuantumMs = 16;
+constexpr float kVelocityPerPowerPixelsPerSecond = 100.0f;
+constexpr float kNormalizedWorldPixels = 50.0f;
+
 struct StoredTask {
     std::unique_ptr<Task> task;
 };
@@ -28,13 +33,11 @@ int g_frame_index = 0;
 int g_thread_mode = 1;
 bool g_visualization_enabled = false;
 bool g_single_thread_mixed_turn_prefers_p3 = false;
+int g_single_thread_p2_phase = 0;
 std::vector<RuntimeThread> g_threads;
 std::deque<StoredTask> g_p1_queue;
 std::deque<StoredTask> g_p2_queue;
 std::deque<StoredTask> g_p3_queue;
-bool g_camera_resident_enabled = true;
-bool g_microphone_resident_enabled = true;
-bool g_batch_resident_enabled = true;
 int g_dandelion_layout_revision = 0;
 
 long long current_time_ms() {
@@ -63,7 +66,23 @@ bool camera_gate_is_fresh(const RuntimeState& state) {
     if (!state.camera_gate_open || state.camera_gate_frame < 0) {
         return false;
     }
-    return (g_frame_index - state.camera_gate_frame) <= 1;
+    if (state.camera_gate_until_ms <= 0) {
+        return (g_frame_index - state.camera_gate_frame) <= 1;
+    }
+    return current_time_ms() <= state.camera_gate_until_ms;
+}
+
+std::string build_input_focus_status(const RuntimeState& state) {
+    if (state.camera_focus_locked) {
+        return "CAMERA FOCUS";
+    }
+    if (state.microphone_focus_locked) {
+        return "MIC FOCUS";
+    }
+    if (state.camera_gate_open) {
+        return "GATE OPEN";
+    }
+    return "FREE FOCUS";
 }
 
 std::vector<TaskRecord> snapshot_queue(const std::deque<StoredTask>& queue) {
@@ -121,6 +140,7 @@ void mark_noncurrent_runnable_threads_waiting(int current_thread_id,
         }
         thread.state = ThreadState::WAITING;
         thread.bound_task_id = -1;
+        thread.bound_task_name = "none";
         thread.last_task_event = event_name;
     }
 }
@@ -132,6 +152,7 @@ void apply_thread_mode_state(int active_threads) {
             if (thread.state == ThreadState::SLEEPING || thread.state == ThreadState::CLOSED) {
                 thread.state = ThreadState::IDLE;
                 thread.bound_task_id = -1;
+                thread.bound_task_name = "none";
                 thread.last_task_event = "mode-wake";
             }
             continue;
@@ -139,8 +160,13 @@ void apply_thread_mode_state(int active_threads) {
 
         thread.state = ThreadState::SLEEPING;
         thread.bound_task_id = -1;
+        thread.bound_task_name = "none";
         thread.last_task_event = "mode-sleep";
     }
+}
+
+std::string task_debug_label(const Task& task) {
+    return task.name + "#" + std::to_string(task.id);
 }
 
 std::deque<StoredTask>& queue_for_priority(PriorityLevel priority) {
@@ -279,10 +305,10 @@ void erase_p2_tasks_by_type(TaskType type) {
     g_p2_queue.erase(it, g_p2_queue.end());
 }
 
-bool is_resident_task_type(TaskType type);
-bool p2_queue_contains_only_resident_tasks();
-bool p2_queue_contains_nonresident_tasks();
+bool p2_queue_contains_only_batch_followup_tasks();
+bool p2_queue_contains_preemptive_tasks();
 void reconcile_runtime_particle_bookkeeping();
+void seed_input_entry_task_if_idle();
 
 bool task_eligible_this_frame(const StoredTask& entry) {
     return entry.task && entry.task->last_scheduled_frame != g_frame_index;
@@ -314,14 +340,76 @@ bool pop_next_eligible_task(std::deque<StoredTask>& queue,
     return false;
 }
 
+int single_thread_p2_phase_for(TaskType type) {
+    switch (type) {
+    case TaskType::CAMERA:
+        return 0;
+    case TaskType::MICROPHONE:
+        return 1;
+    case TaskType::GENERATE_PARTICLE:
+    case TaskType::BREEZE:
+    case TaskType::CHANGE_DANDELION:
+        return 2;
+    case TaskType::BATCH_PARTICLE_EXECUTION:
+        return 3;
+    default:
+        return 3;
+    }
+}
+
+bool pop_single_thread_p2_task(StoredTask& out) {
+    auto pop_locked_type = [&out](TaskType locked_type) {
+        for (int index = 0; index < static_cast<int>(g_p2_queue.size()); ++index) {
+            const StoredTask& entry = g_p2_queue[static_cast<std::size_t>(index)];
+            if (!task_eligible_this_frame(entry)) {
+                continue;
+            }
+            if (entry.task->type != locked_type) {
+                continue;
+            }
+            out = std::move(g_p2_queue[static_cast<std::size_t>(index)]);
+            g_p2_queue.erase(g_p2_queue.begin() + index);
+            g_single_thread_p2_phase = (single_thread_p2_phase_for(locked_type) + 1) % 4;
+            return true;
+        }
+        return false;
+    };
+
+    RuntimeState& state_ref = runtime_state();
+    if (state_ref.camera_focus_locked && pop_locked_type(TaskType::CAMERA)) {
+        return true;
+    }
+    if (state_ref.microphone_focus_locked && pop_locked_type(TaskType::MICROPHONE)) {
+        return true;
+    }
+
+    for (int phase_offset = 0; phase_offset < 4; ++phase_offset) {
+        const int desired_phase = (g_single_thread_p2_phase + phase_offset) % 4;
+        for (int index = 0; index < static_cast<int>(g_p2_queue.size()); ++index) {
+            const StoredTask& entry = g_p2_queue[static_cast<std::size_t>(index)];
+            if (!task_eligible_this_frame(entry)) {
+                continue;
+            }
+            if (single_thread_p2_phase_for(entry.task->type) != desired_phase) {
+                continue;
+            }
+            out = std::move(g_p2_queue[static_cast<std::size_t>(index)]);
+            g_p2_queue.erase(g_p2_queue.begin() + index);
+            g_single_thread_p2_phase = (desired_phase + 1) % 4;
+            return true;
+        }
+    }
+    return false;
+}
+
 bool take_next_task_for_dispatch(int dispatch_slot, int active_threads, StoredTask& out) {
     if (pop_next_eligible_task(g_p1_queue, true, out)) {
         return true;
     }
 
-    const bool mixed_resident_and_p3 =
-        !g_p3_queue.empty() && p2_queue_contains_only_resident_tasks();
-    if (mixed_resident_and_p3) {
+    const bool mixed_batch_and_p3 =
+        !g_p3_queue.empty() && p2_queue_contains_only_batch_followup_tasks();
+    if (mixed_batch_and_p3) {
         if (active_threads <= 1) {
             const bool prefer_p3 = g_single_thread_mixed_turn_prefers_p3;
             const bool selected = prefer_p3
@@ -346,6 +434,13 @@ bool take_next_task_for_dispatch(int dispatch_slot, int active_threads, StoredTa
             return true;
         }
         return pop_next_eligible_task(g_p2_queue, false, out);
+    }
+
+    if (active_threads <= 1) {
+        if (pop_single_thread_p2_task(out)) {
+            return true;
+        }
+        return pop_next_eligible_task(g_p3_queue, false, out);
     }
 
     if (pop_next_eligible_task(g_p2_queue, false, out)) {
@@ -377,7 +472,7 @@ bool highest_pending_preemptor_priority(PriorityLevel running_priority,
         out_priority = PriorityLevel::P1_SYSTEM;
         return true;
     }
-    if (running_priority == PriorityLevel::P3_PARTICLE && p2_queue_contains_nonresident_tasks()) {
+    if (running_priority == PriorityLevel::P3_PARTICLE && p2_queue_contains_preemptive_tasks()) {
         out_priority = PriorityLevel::P2_FUNCTIONAL;
         return true;
     }
@@ -389,52 +484,6 @@ std::string requeue_action_for(bool resumed, bool preempted) {
         return resumed ? "resume-preempted-tail" : "preempted-tail";
     }
     return resumed ? "resume-tail" : "execute-tail";
-}
-
-bool resident_enabled_for(TaskType type) {
-    switch (type) {
-    case TaskType::CAMERA:
-        return g_camera_resident_enabled;
-    case TaskType::MICROPHONE:
-        return g_microphone_resident_enabled;
-    case TaskType::BATCH_PARTICLE_EXECUTION:
-        return g_batch_resident_enabled;
-    default:
-        return false;
-    }
-}
-
-bool is_resident_task_type(TaskType type) {
-    switch (type) {
-    case TaskType::CAMERA:
-    case TaskType::MICROPHONE:
-    case TaskType::BATCH_PARTICLE_EXECUTION:
-        return true;
-    default:
-        return false;
-    }
-}
-
-bool p2_queue_contains_only_resident_tasks() {
-    if (g_p2_queue.empty()) {
-        return false;
-    }
-
-    return std::all_of(
-        g_p2_queue.begin(),
-        g_p2_queue.end(),
-        [](const StoredTask& entry) {
-            return entry.task && is_resident_task_type(entry.task->type);
-        });
-}
-
-bool p2_queue_contains_nonresident_tasks() {
-    return std::any_of(
-        g_p2_queue.begin(),
-        g_p2_queue.end(),
-        [](const StoredTask& entry) {
-            return entry.task && !is_resident_task_type(entry.task->type);
-        });
 }
 
 int priority_rank_for_pending_preemption(const FrameDispatchEntry& entry) {
@@ -465,56 +514,69 @@ int select_preemption_victim_index(const std::vector<FrameDispatchEntry>& frame_
     return best_index;
 }
 
-void update_resident_policy_for_mode(int thread_mode) {
-    g_camera_resident_enabled = true;
-    g_microphone_resident_enabled = thread_mode >= 2;
-    g_batch_resident_enabled = thread_mode >= 3;
+bool is_batch_followup_task_type(TaskType type) {
+    return type == TaskType::BATCH_PARTICLE_EXECUTION;
 }
 
-void ensure_resident_task(TaskType type) {
-    if (!resident_enabled_for(type)) {
-        erase_p2_tasks_by_type(type);
-        return;
+bool p2_queue_contains_only_batch_followup_tasks() {
+    if (g_p2_queue.empty()) {
+        return false;
     }
 
-    if (has_queued_task(type, PriorityLevel::P2_FUNCTIONAL)) {
-        return;
-    }
+    return std::all_of(
+        g_p2_queue.begin(),
+        g_p2_queue.end(),
+        [](const StoredTask& entry) {
+            return entry.task && is_batch_followup_task_type(entry.task->type);
+        });
+}
 
-    if (type == TaskType::CAMERA) {
-        submit_task(make_camera_task());
+bool p2_queue_contains_preemptive_tasks() {
+    return std::any_of(
+        g_p2_queue.begin(),
+        g_p2_queue.end(),
+        [](const StoredTask& entry) {
+            return entry.task && !is_batch_followup_task_type(entry.task->type);
+        });
+}
+
+void refresh_device_availability_from_bridges() {
+    refresh_bridge_inputs();
+    RuntimeState& state_ref = runtime_state();
+    state_ref.camera_device_available = state_ref.camera_bridge.bridge_connected;
+    state_ref.microphone_device_available = state_ref.microphone_bridge.bridge_connected;
+}
+
+bool queues_all_empty() {
+    return g_p1_queue.empty() && g_p2_queue.empty() && g_p3_queue.empty();
+}
+
+void queue_microphone_stage_if_needed() {
+    if (!runtime_state().microphone_device_available) {
         return;
     }
-    if (type == TaskType::MICROPHONE) {
+    if (!has_queued_task(TaskType::MICROPHONE, PriorityLevel::P2_FUNCTIONAL)) {
         submit_task(make_microphone_task());
-        return;
     }
-    if (type == TaskType::BATCH_PARTICLE_EXECUTION) {
+}
+
+void queue_batch_stage_if_needed() {
+    if (!has_queued_task(TaskType::BATCH_PARTICLE_EXECUTION, PriorityLevel::P2_FUNCTIONAL)) {
         submit_task(make_batch_particle_execution_task());
     }
 }
 
-void sync_resident_tasks_for_mode() {
-    ensure_resident_task(TaskType::CAMERA);
-    ensure_resident_task(TaskType::MICROPHONE);
-    ensure_resident_task(TaskType::BATCH_PARTICLE_EXECUTION);
+void seed_input_entry_task_if_idle() {
+    if (current_runtime_state().phase != RuntimePhase::READY || !queues_all_empty()) {
+        return;
+    }
 
-    with_shared_state_write(false, false, true, []() {
-        if (!g_microphone_resident_enabled) {
-            render_data().ui.microphone_task_status = "MIC waiting for thread mode";
-        }
-        if (!g_batch_resident_enabled) {
-            render_data().ui.batch_task_status = "BATCH waiting for thread mode";
-        }
-        if (g_microphone_resident_enabled &&
-            render_data().ui.microphone_task_status == "MIC waiting for thread mode") {
-            render_data().ui.microphone_task_status = "offline";
-        }
-        if (g_batch_resident_enabled &&
-            render_data().ui.batch_task_status == "BATCH waiting for thread mode") {
-            render_data().ui.batch_task_status = "idle";
-        }
-    });
+    RuntimeState& state_ref = runtime_state();
+    if (state_ref.camera_device_available) {
+        submit_task(make_camera_task());
+    } else if (state_ref.microphone_device_available) {
+        submit_task(make_microphone_task());
+    }
 }
 
 void rebuild_particle_ring_for_world(float center_x, float center_y, int count) {
@@ -607,18 +669,6 @@ void reconcile_runtime_particle_bookkeeping() {
     reconcile_particle_bookkeeping(runtime_state(), render_data());
 }
 
-void ensure_baseline_functional_tasks() {
-    if (!has_queued_task(TaskType::CAMERA, PriorityLevel::P2_FUNCTIONAL)) {
-        submit_task(make_camera_task());
-    }
-    if (!has_queued_task(TaskType::MICROPHONE, PriorityLevel::P2_FUNCTIONAL)) {
-        submit_task(make_microphone_task());
-    }
-    if (!has_queued_task(TaskType::BATCH_PARTICLE_EXECUTION, PriorityLevel::P2_FUNCTIONAL)) {
-        submit_task(make_batch_particle_execution_task());
-    }
-}
-
 }  // namespace
 
 PlaceholderTask::PlaceholderTask(TaskType task_type,
@@ -661,9 +711,10 @@ void ResetTask::execute() {
     clear_task_queue(PriorityLevel::P2_FUNCTIONAL);
     clear_task_queue(PriorityLevel::P3_PARTICLE);
     reset_simulation_world();
-    ensure_baseline_functional_tasks();
+    refresh_device_availability_from_bridges();
     set_runtime_phase(RuntimePhase::READY);
-    push_runtime_note("ResetTask: world reset and baseline tasks restored.");
+    seed_input_entry_task_if_idle();
+    push_runtime_note("ResetTask: world reset and input entry reseeded.");
     state = TaskState::FINISHED;
 }
 
@@ -698,14 +749,22 @@ void CameraTask::resume() {
 
 void CameraTask::run_cycle(bool resumed) {
     ++cycle_count_;
-    with_shared_state_write(false, false, true, [this, resumed]() {
+    bool should_cancel_pending_blow_tasks = false;
+    bool should_queue_microphone = false;
+    bool stage_finished = false;
+    with_shared_state_write(false, false, true, [this, resumed, &should_cancel_pending_blow_tasks, &should_queue_microphone, &stage_finished]() {
         RuntimeState& state_ref = runtime_state();
         RenderData& data = render_data();
         const CameraBridgeState& bridge = state_ref.camera_bridge;
         const bool bridge_fresh = camera_bridge_is_fresh(bridge);
+        const bool device_available = state_ref.camera_device_available;
 
         state_ref.camera_available =
-            bridge.bridge_connected && bridge.sample_ready && bridge_fresh && bridge.face_detected;
+            device_available &&
+            bridge.bridge_connected &&
+            bridge.sample_ready &&
+            bridge_fresh &&
+            bridge.face_detected;
         if (state_ref.camera_available) {
             state_ref.world.mouth_x = std::clamp(bridge.mouth_center_x, 0.0f, 1.0f);
             state_ref.world.mouth_y = std::clamp(bridge.mouth_center_y, 0.0f, 1.0f);
@@ -719,39 +778,121 @@ void CameraTask::run_cycle(bool resumed) {
             state_ref.camera_available &&
             bridge.mouth_open_state &&
             bridge.looking_forward;
-        state_ref.camera_gate_open = data.camera_layer.mouth_detected;
-        state_ref.camera_gate_frame = data.camera_layer.mouth_detected ? g_frame_index : -1;
+        if (!device_available) {
+            state_ref.camera_gate_open = false;
+            state_ref.camera_gate_frame = -1;
+            state_ref.camera_gate_until_ms = 0;
+            state_ref.camera_focus_locked = false;
+            state_ref.microphone_focus_locked = state_ref.microphone_device_available;
+            state_ref.microphone_focus_until_ms =
+                state_ref.microphone_device_available ? current_time_ms() + kCameraGateHoldMs : 0;
+            state_ref.microphone_focus_consumed_for_gate = false;
+            data.camera_layer.status = "camera-device-unavailable";
+            data.ui.camera_task_status = "CAM unavailable, handoff";
+            should_queue_microphone = state_ref.microphone_device_available;
+            stage_finished = true;
+        } else if (data.camera_layer.mouth_detected) {
+            state_ref.camera_gate_open = true;
+            state_ref.camera_gate_frame = g_frame_index;
+            state_ref.camera_gate_until_ms = current_time_ms() + kCameraGateHoldMs;
+            state_ref.microphone_focus_consumed_for_gate = false;
+            state_ref.camera_focus_locked = false;
+            state_ref.microphone_focus_locked = true;
+            state_ref.microphone_focus_until_ms = current_time_ms() + kCameraGateHoldMs;
+            should_queue_microphone = state_ref.microphone_device_available;
+            stage_finished = true;
+        } else if (state_ref.camera_gate_until_ms > 0 &&
+                   current_time_ms() <= state_ref.camera_gate_until_ms &&
+                   bridge.bridge_connected &&
+                   bridge.sample_ready &&
+                   bridge_fresh &&
+                   bridge.face_detected) {
+            state_ref.camera_gate_open = true;
+            state_ref.camera_focus_locked = false;
+            if (!state_ref.microphone_focus_consumed_for_gate) {
+                state_ref.microphone_focus_locked = true;
+                state_ref.microphone_focus_until_ms =
+                    std::max(state_ref.microphone_focus_until_ms, current_time_ms() + kCameraGateHoldMs);
+            }
+        } else {
+            state_ref.camera_gate_open = false;
+            state_ref.camera_gate_frame = -1;
+            state_ref.camera_gate_until_ms = 0;
+            state_ref.camera_focus_locked = true;
+            state_ref.microphone_focus_locked = false;
+            state_ref.microphone_focus_until_ms = 0;
+            state_ref.microphone_focus_consumed_for_gate = false;
+        }
+        should_cancel_pending_blow_tasks = !state_ref.camera_gate_open;
         data.camera_layer.mouth_x = state_ref.world.mouth_x;
         data.camera_layer.mouth_y = state_ref.world.mouth_y;
         data.camera_layer.update_tick = cycle_count_;
-        if (!bridge.bridge_connected) {
+        if (!device_available) {
+            data.camera_layer.status = "camera-device-unavailable";
+            data.ui.camera_task_status = "CAM unavailable, handoff";
+        } else if (!bridge.bridge_connected) {
             data.camera_layer.status = "camera-bridge-disconnected";
-            data.ui.camera_task_status = "CAM bridge disconnected";
+            data.ui.camera_task_status = bridge.status_text.empty()
+                ? "CAM bridge disconnected"
+                : "CAM " + bridge.status_text;
+            state_ref.camera_focus_locked = false;
+            state_ref.microphone_focus_locked = true;
+            state_ref.microphone_focus_until_ms = current_time_ms() + kCameraGateHoldMs;
+            state_ref.microphone_focus_consumed_for_gate = false;
         } else if (!bridge.sample_ready) {
             data.camera_layer.status = "camera-bridge-waiting";
-            data.ui.camera_task_status = "CAM waiting for bridge sample";
+            data.ui.camera_task_status = bridge.status_text.empty()
+                ? "CAM waiting for bridge sample"
+                : "CAM " + bridge.status_text;
+            state_ref.camera_focus_locked = true;
+            state_ref.microphone_focus_locked = false;
+            state_ref.microphone_focus_consumed_for_gate = false;
         } else if (!bridge_fresh) {
             data.camera_layer.status = "camera-bridge-stale";
             data.ui.camera_task_status = "CAM bridge sample stale";
         } else if (!bridge.face_detected) {
             data.camera_layer.status = "camera-bridge-no-face";
-            data.ui.camera_task_status = "CAM sample ready, no face";
+            data.ui.camera_task_status = bridge.status_text.empty()
+                ? "CAM sample ready, no face"
+                : "CAM " + bridge.status_text;
+            state_ref.camera_focus_locked = true;
+            state_ref.microphone_focus_locked = false;
+            state_ref.microphone_focus_consumed_for_gate = false;
         } else if (!bridge.mouth_open_state || !bridge.looking_forward) {
             data.camera_layer.status = "camera-bridge-face-idle";
-            data.ui.camera_task_status = "CAM face tracked, mouth idle";
+            data.ui.camera_task_status = bridge.status_text.empty()
+                ? "CAM face tracked, mouth idle"
+                : "CAM " + bridge.status_text;
         } else {
             data.camera_layer.status = resumed ? "camera-bridge-resume" : "camera-bridge-active";
             data.ui.camera_task_status =
                 "CAM bridge active " + bridge.backend +
                 " conf " + std::to_string(static_cast<int>(bridge.confidence * 100.0f));
         }
+        data.ui.input_focus_status = build_input_focus_status(state_ref);
     });
 
-    if (cycle_count_ == 1) {
-        push_runtime_note("CameraTask: resident bridge contract active.");
+    if (should_queue_microphone) {
+        queue_microphone_stage_if_needed();
     }
 
-    state = TaskState::RUNNING;
+    if (should_cancel_pending_blow_tasks) {
+        const bool had_generate =
+            has_queued_task(TaskType::GENERATE_PARTICLE, PriorityLevel::P2_FUNCTIONAL);
+        const bool had_breeze =
+            has_queued_task(TaskType::BREEZE, PriorityLevel::P2_FUNCTIONAL);
+        erase_p2_tasks_by_type(TaskType::GENERATE_PARTICLE);
+        erase_p2_tasks_by_type(TaskType::BREEZE);
+        if (had_generate || had_breeze) {
+            push_runtime_note("CameraTask: mouth closed, cancelled pending blow tasks.");
+        }
+    }
+
+    if (stage_finished) {
+        push_runtime_note("CameraTask: stage completed.");
+    }
+
+    state = stage_finished ? TaskState::FINISHED : TaskState::RUNNING;
 }
 
 MicrophoneTask::MicrophoneTask() {
@@ -773,33 +914,42 @@ void MicrophoneTask::run_cycle(bool resumed) {
     ++sample_count_;
     bool should_queue_generate = false;
     bool should_queue_breeze = false;
-    with_shared_state_write(false, true, true, [this, resumed, &should_queue_generate, &should_queue_breeze]() {
+    bool stage_finished = false;
+    with_shared_state_write(false, true, true, [this, resumed, &should_queue_generate, &should_queue_breeze, &stage_finished]() {
         RuntimeState& state_ref = runtime_state();
         RenderData& data = render_data();
         const MicrophoneBridgeState& bridge = state_ref.microphone_bridge;
         const bool camera_gate_ready = camera_gate_is_fresh(state_ref);
+        const bool microphone_focus_ready =
+            state_ref.microphone_focus_locked &&
+            state_ref.microphone_focus_until_ms > 0 &&
+            current_time_ms() <= state_ref.microphone_focus_until_ms;
+        const bool input_window_ready =
+            !state_ref.camera_device_available || camera_gate_ready || microphone_focus_ready;
         const bool bridge_fresh = microphone_bridge_is_fresh(bridge);
-        const bool particle_work_pending =
-            state_ref.world.queued_particle_tasks > 0 ||
-            has_queued_task(TaskType::SINGLE_PARTICLE, PriorityLevel::P3_PARTICLE);
         const bool sample_already_consumed =
             bridge.timestamp_ms > 0 &&
             bridge.timestamp_ms == state_ref.last_consumed_microphone_sample_ms;
 
         state_ref.microphone_available =
-            camera_gate_ready &&
+            state_ref.microphone_device_available &&
+            input_window_ready &&
             bridge.bridge_connected &&
             bridge.sample_ready &&
             bridge_fresh &&
             bridge.voice_detected;
-        state_ref.world.power = camera_gate_ready
+        state_ref.world.power = input_window_ready
             ? (bridge_fresh ? std::clamp(bridge.suggested_power, 0.1f, 10.0f) : 0.1f)
             : 0.1f;
 
         data.wind_layer.active = state_ref.microphone_available;
         data.wind_layer.power = state_ref.world.power;
         data.wind_layer.sample_tick = sample_count_;
-        if (!camera_gate_ready) {
+        if (!state_ref.microphone_device_available) {
+            data.wind_layer.status = "mic-device-unavailable";
+            data.ui.microphone_task_status = "MIC unavailable";
+            stage_finished = true;
+        } else if (!input_window_ready) {
             data.wind_layer.status = "mic-waiting-for-camera";
             data.ui.microphone_task_status = "MIC waiting for camera gate";
         } else if (!bridge.bridge_connected) {
@@ -826,27 +976,44 @@ void MicrophoneTask::run_cycle(bool resumed) {
         data.ui.power = state_ref.world.power;
 
         should_queue_breeze =
-            g_microphone_resident_enabled &&
-            camera_gate_ready &&
+            input_window_ready &&
             bridge.bridge_connected &&
             bridge.sample_ready &&
             bridge_fresh &&
             bridge.fallback_requested &&
             !sample_already_consumed &&
-            !particle_work_pending &&
             !has_queued_task(TaskType::BREEZE, PriorityLevel::P2_FUNCTIONAL);
         should_queue_generate =
-            g_microphone_resident_enabled &&
-            camera_gate_ready &&
+            input_window_ready &&
             state_ref.microphone_available &&
             !bridge.fallback_requested &&
             !sample_already_consumed &&
-            !particle_work_pending &&
             !has_queued_task(TaskType::GENERATE_PARTICLE, PriorityLevel::P2_FUNCTIONAL);
 
         if ((should_queue_generate || should_queue_breeze) && bridge.timestamp_ms > 0) {
             state_ref.last_consumed_microphone_sample_ms = bridge.timestamp_ms;
+            state_ref.microphone_focus_locked = false;
+            state_ref.microphone_focus_until_ms = 0;
+            state_ref.microphone_focus_consumed_for_gate = true;
+            state_ref.camera_focus_locked = false;
+            state_ref.camera_gate_open = false;
+            state_ref.camera_gate_frame = -1;
+            state_ref.camera_gate_until_ms = 0;
+            stage_finished = true;
+        } else if (microphone_focus_ready) {
+            state_ref.camera_focus_locked = false;
+            state_ref.microphone_focus_locked = true;
+        } else if (!input_window_ready) {
+            state_ref.microphone_focus_locked = false;
+            state_ref.microphone_focus_until_ms = 0;
+            state_ref.microphone_focus_consumed_for_gate = false;
+            state_ref.camera_focus_locked = true;
+        } else {
+            state_ref.camera_focus_locked = false;
+            state_ref.microphone_focus_locked = true;
+            state_ref.microphone_focus_until_ms = current_time_ms() + kCameraGateHoldMs;
         }
+        data.ui.input_focus_status = build_input_focus_status(state_ref);
     });
 
     if (should_queue_generate) {
@@ -856,11 +1023,11 @@ void MicrophoneTask::run_cycle(bool resumed) {
         submit_task(make_breeze_task());
     }
 
-    if (sample_count_ == 1) {
-        push_runtime_note("MicrophoneTask: resident bridge contract active.");
+    if (stage_finished) {
+        push_runtime_note("MicrophoneTask: stage completed.");
     }
 
-    state = TaskState::RUNNING;
+    state = stage_finished ? TaskState::FINISHED : TaskState::RUNNING;
 }
 
 GenerateParticleTask::GenerateParticleTask() {
@@ -911,6 +1078,9 @@ void GenerateParticleTask::execute() {
             created > 0 ? "P3 queue populated" : "P3 queue unchanged";
     });
 
+    if (created > 0) {
+        queue_batch_stage_if_needed();
+    }
     push_runtime_note(
         "GenerateParticleTask: queued " + std::to_string(created) + " particle task records.");
     state = TaskState::FINISHED;
@@ -959,6 +1129,9 @@ void BreezeTask::execute() {
                              : "BREEZE fallback created 0 particle tasks";
     });
 
+    if (created_particle) {
+        queue_batch_stage_if_needed();
+    }
     push_runtime_note(created_particle
         ? "BreezeTask: fallback wind queued one particle task."
         : "BreezeTask: fallback wind ran without queuing a particle.");
@@ -1012,7 +1185,6 @@ void ChangeDandelionTask::execute() {
     });
 
     clear_task_queue(PriorityLevel::P3_PARTICLE);
-    ensure_resident_task(TaskType::CAMERA);
     push_runtime_note("ChangeDandelionTask: rebuilt dandelion cluster and reset particle state.");
     state = TaskState::FINISHED;
 }
@@ -1034,16 +1206,20 @@ void BatchParticleExecutionTask::resume() {
 
 void BatchParticleExecutionTask::run_cycle(bool resumed) {
     ++tick_count_;
-    ++decay_accumulator_;
-    with_shared_state_write(true, true, true, [this, resumed]() {
+    if (!started_) {
+        started_ = true;
+    }
+    decay_accumulator_ms_ += kRrQuantumMs;
+    bool stage_finished = false;
+    with_shared_state_write(true, true, true, [this, resumed, &stage_finished]() {
         RuntimeState& state_ref = runtime_state();
         RenderData& data = render_data();
         bool power_decayed = false;
         int cleaned_particles = 0;
 
-        if (decay_accumulator_ >= 60 && state_ref.world.power > 0.1f) {
+        if (decay_accumulator_ms_ >= 1000 && state_ref.world.power > 0.1f) {
             state_ref.world.power = std::max(0.1f, state_ref.world.power - 0.01f);
-            decay_accumulator_ = 0;
+            decay_accumulator_ms_ -= 1000;
             power_decayed = true;
         }
 
@@ -1066,6 +1242,27 @@ void BatchParticleExecutionTask::run_cycle(bool resumed) {
 
         reconcile_particle_bookkeeping(state_ref, data);
 
+        const bool has_cleanup_pending = std::any_of(
+            data.particles.begin(),
+            data.particles.end(),
+            [](const ParticleRenderData& particle) {
+                return !particle.active &&
+                    !particle.attached &&
+                    particle.source_task_id == -1 &&
+                    (particle.status == "particle-finished" ||
+                     particle.status == "particle-boundary-stop");
+            });
+        const bool has_active_particle_motion = std::any_of(
+            data.particles.begin(),
+            data.particles.end(),
+            [](const ParticleRenderData& particle) {
+                return !particle.attached && particle.active;
+            });
+        stage_finished =
+            !has_cleanup_pending &&
+            !has_active_particle_motion &&
+            state_ref.world.queued_particle_tasks == 0;
+
         data.wind_layer.active = false;
         data.wind_layer.power = state_ref.world.power;
         data.wind_layer.tick_count = tick_count_;
@@ -1073,8 +1270,10 @@ void BatchParticleExecutionTask::run_cycle(bool resumed) {
             data.wind_layer.status = "world-tick-cleanup";
         } else if (power_decayed) {
             data.wind_layer.status = "world-tick-decay";
+        } else if (tick_count_ == 1) {
+            data.wind_layer.status = "world-tick-start";
         } else {
-            data.wind_layer.status = resumed ? "resident-resume" : "resident-execute";
+            data.wind_layer.status = resumed ? "batch-resume" : "batch-execute";
         }
         data.ui.power = state_ref.world.power;
         if (cleaned_particles > 0) {
@@ -1084,16 +1283,20 @@ void BatchParticleExecutionTask::run_cycle(bool resumed) {
             data.ui.batch_task_status =
                 "BATCH decayed power to " +
                 std::to_string(static_cast<int>(state_ref.world.power * 100.0f) / 100.0f);
+        } else if (tick_count_ == 1) {
+            data.ui.batch_task_status = "BATCH recorded initial world tick";
+        } else if (stage_finished) {
+            data.ui.batch_task_status = "BATCH finished world pass";
         } else {
-            data.ui.batch_task_status = "BATCH resident tick " + std::to_string(tick_count_);
+            data.ui.batch_task_status = "BATCH tick " + std::to_string(tick_count_);
         }
     });
 
-    if (tick_count_ == 1) {
-        push_runtime_note("BatchParticleExecutionTask: resident scaffold active.");
+    if (stage_finished) {
+        push_runtime_note("BatchParticleExecutionTask: stage completed.");
     }
 
-    state = TaskState::RUNNING;
+    state = stage_finished ? TaskState::FINISHED : TaskState::RUNNING;
 }
 
 SingleParticleTask::SingleParticleTask(int particle_slot,
@@ -1136,13 +1339,53 @@ void SingleParticleTask::run_cycle(bool resumed) {
             if (!initialized_) {
                 x_ = particle.x;
                 y_ = particle.y;
-                vx_ = 0.01f * static_cast<float>(generation_index_);
-                vy_ = 0.006f * static_cast<float>((generation_index_ % 3) + 1);
+                const float from_center_x = x_ - state_ref.world.dandelion_x;
+                const float from_center_y = y_ - state_ref.world.dandelion_y;
+                const float from_mouth_x = x_ - state_ref.world.mouth_x;
+                const float from_mouth_y = y_ - state_ref.world.mouth_y;
+                float base_x = from_center_x;
+                float base_y = from_center_y;
+                if (std::abs(base_x) + std::abs(base_y) < 0.001f) {
+                    base_x = from_mouth_x;
+                    base_y = from_mouth_y;
+                }
+                if (std::abs(base_x) + std::abs(base_y) < 0.001f) {
+                    base_x = 1.0f;
+                    base_y = 0.0f;
+                }
+
+                float length = std::sqrt(base_x * base_x + base_y * base_y);
+                if (length <= 0.0001f) {
+                    length = 1.0f;
+                }
+                base_x /= length;
+                base_y /= length;
+
+                const float spread = (static_cast<float>(generation_index_) - 2.0f) * 0.18f;
+                dir_x_ = base_x + (-base_y * spread);
+                dir_y_ = base_y + (base_x * spread);
+
+                float dir_length = std::sqrt(dir_x_ * dir_x_ + dir_y_ * dir_y_);
+                if (dir_length <= 0.0001f) {
+                    dir_x_ = base_x;
+                    dir_y_ = base_y;
+                    dir_length = 1.0f;
+                }
+                dir_x_ /= dir_length;
+                dir_y_ /= dir_length;
+
+                const float velocity_pixels_per_second =
+                    std::clamp(state_ref.world.power, 0.1f, 10.0f) *
+                    kVelocityPerPowerPixelsPerSecond;
+                distance_per_tick_ =
+                    velocity_pixels_per_second *
+                    (static_cast<float>(kRrQuantumMs) / 1000.0f) /
+                    kNormalizedWorldPixels;
                 initialized_ = true;
             }
 
-            x_ += vx_;
-            y_ += vy_;
+            x_ += dir_x_ * distance_per_tick_;
+            y_ += dir_y_ * distance_per_tick_;
             particle.source_task_id = id;
             particle.x = x_;
             particle.y = y_;
@@ -1151,24 +1394,21 @@ void SingleParticleTask::run_cycle(bool resumed) {
 
             const bool boundary_stop =
                 x_ < 0.0f || x_ > 1.0f || y_ < 0.0f || y_ > 1.0f;
-            const bool lifecycle_complete = cycle_count_ >= 3;
 
-            if (boundary_stop || lifecycle_complete) {
+            if (boundary_stop) {
                 completed_ = true;
                 particle.active = false;
                 particle.attached = false;
                 particle.source_task_id = -1;
-                particle.status =
-                    boundary_stop ? "particle-boundary-stop" : "particle-finished";
+                particle.status = "particle-boundary-stop";
                 reconcile_particle_bookkeeping(state_ref, data);
-                data.ui.particle_task_status = boundary_stop
-                    ? "P3 task " + std::to_string(id) + " boundary stop cleanup"
-                    : "P3 task " + std::to_string(id) + " finished cleanup";
+                data.ui.particle_task_status =
+                    "P3 task " + std::to_string(id) + " boundary stop cleanup";
             } else {
                 reconcile_particle_bookkeeping(state_ref, data);
                 data.ui.particle_task_status =
                     "P3 task " + std::to_string(id) +
-                    " cycle " + std::to_string(cycle_count_);
+                    " step " + std::to_string(cycle_count_);
             }
         } else {
             reconcile_particle_bookkeeping(state_ref, data);
@@ -1185,12 +1425,10 @@ void bootstrap_runtime() {
     g_frame_index = 0;
     g_thread_mode = 1;
     g_single_thread_mixed_turn_prefers_p3 = false;
+    g_single_thread_p2_phase = 0;
     g_p1_queue.clear();
     g_p2_queue.clear();
     g_p3_queue.clear();
-    g_camera_resident_enabled = true;
-    g_microphone_resident_enabled = true;
-    g_batch_resident_enabled = true;
     rebuild_thread_pool();
     runtime_state() = RuntimeState{};
     set_runtime_phase(RuntimePhase::BOOTSTRAP);
@@ -1200,12 +1438,10 @@ void bootstrap_runtime() {
 void reset_runtime() {
     g_frame_index = 0;
     g_single_thread_mixed_turn_prefers_p3 = false;
+    g_single_thread_p2_phase = 0;
     g_p1_queue.clear();
     g_p2_queue.clear();
     g_p3_queue.clear();
-    g_camera_resident_enabled = true;
-    g_microphone_resident_enabled = true;
-    g_batch_resident_enabled = true;
     rebuild_thread_pool();
     runtime_state().shutdown_requested = false;
     set_runtime_phase(RuntimePhase::BOOTSTRAP);
@@ -1281,12 +1517,13 @@ std::unique_ptr<Task> make_single_particle_task(int particle_slot,
 
 void set_thread_mode(int mode) {
     g_thread_mode = std::clamp(mode, 1, 3);
+    if (g_thread_mode == 1) {
+        g_single_thread_p2_phase = 0;
+    }
     if (g_threads.empty()) {
         rebuild_thread_pool();
     }
-    update_resident_policy_for_mode(g_thread_mode);
     apply_thread_mode_state(g_thread_mode);
-    sync_resident_tasks_for_mode();
     with_shared_state_write(false, false, true, []() {
         render_data().ui.thread_mode = current_thread_mode();
     });
@@ -1307,12 +1544,18 @@ void scheduler_tick() {
         if (thread.state == ThreadState::WAITING) {
             thread.state = ThreadState::IDLE;
             thread.bound_task_id = -1;
+            thread.bound_task_name = "none";
             thread.last_task_event = "waiting-ready";
         } else if (thread.state != ThreadState::SLEEPING && thread.state != ThreadState::CLOSED) {
             thread.state = ThreadState::IDLE;
             thread.bound_task_id = -1;
+            thread.bound_task_name = "none";
             thread.last_task_event = "idle";
         }
+    }
+
+    if (!has_pending_tasks()) {
+        seed_input_entry_task_if_idle();
     }
 
     if (!has_pending_tasks()) {
@@ -1340,8 +1583,13 @@ void scheduler_tick() {
             task.state == TaskState::REQUEUED || task.state == TaskState::INTERRUPTED;
         thread.state = ThreadState::RUNNING;
         thread.bound_task_id = task.id;
+        thread.bound_task_name = task_debug_label(task);
         thread.dispatch_count++;
         thread.last_task_event = resume_task ? "resume-dispatch" : "execute-dispatch";
+        thread.last_task_transition = task.last_transition;
+        push_runtime_note(
+            "Thread " + std::to_string(thread.id) + " " +
+            (resume_task ? "resume " : "execute ") + task_debug_label(task));
         mark_task_dispatched(task, g_frame_index, resume_task);
         task.state = TaskState::RUNNING;
         if (resume_task) {
@@ -1363,6 +1611,10 @@ void scheduler_tick() {
             });
             thread.state = ThreadState::WAITING;
             thread.last_task_event = "interrupted-requeued";
+            thread.last_task_transition = task.last_transition;
+            push_runtime_note(
+                "Thread " + std::to_string(thread.id) + " yielded " +
+                task_debug_label(task) + " -> requeued");
 
             PriorityLevel pending_priority = PriorityLevel::P3_PARTICLE;
             if (highest_pending_preemptor_priority(task.priority, pending_priority)) {
@@ -1381,6 +1633,8 @@ void scheduler_tick() {
                             previous.thread_index < static_cast<int>(g_threads.size())) {
                             g_threads[static_cast<std::size_t>(previous.thread_index)].last_task_event =
                                 "interrupted-requeued";
+                            g_threads[static_cast<std::size_t>(previous.thread_index)].last_task_transition =
+                                "requeued";
                         }
                     }
 
@@ -1396,6 +1650,16 @@ void scheduler_tick() {
                         victim.thread_index < static_cast<int>(g_threads.size())) {
                         g_threads[static_cast<std::size_t>(victim.thread_index)].last_task_event =
                             "preempted-requeued";
+                        g_threads[static_cast<std::size_t>(victim.thread_index)].last_task_transition =
+                            "preempted";
+                        if (Task* victim_task = find_queued_task_by_id(victim.task_id)) {
+                            g_threads[static_cast<std::size_t>(victim.thread_index)].bound_task_name =
+                                task_debug_label(*victim_task);
+                            push_runtime_note(
+                                "Thread " +
+                                std::to_string(g_threads[static_cast<std::size_t>(victim.thread_index)].id) +
+                                " preempted " + task_debug_label(*victim_task));
+                        }
                     }
                     selected_preemption_victim_index = victim_index;
                 }
@@ -1404,12 +1668,19 @@ void scheduler_tick() {
             mark_task_finished(task, g_frame_index, "finished-no-resume");
             thread.state = ThreadState::IDLE;
             thread.last_task_event = "finished";
+            thread.last_task_transition = task.last_transition;
+            push_runtime_note(
+                "Thread " + std::to_string(thread.id) + " finished " + task_debug_label(task));
         } else if (task.state == TaskState::FINISHED) {
             mark_task_finished(task, g_frame_index, "finished");
             thread.state = ThreadState::IDLE;
             thread.last_task_event = "finished";
+            thread.last_task_transition = task.last_transition;
+            push_runtime_note(
+                "Thread " + std::to_string(thread.id) + " finished " + task_debug_label(task));
         }
         thread.last_completed_task_id = task.id;
+        thread.last_completed_task_name = task_debug_label(task);
         dispatch_slot++;
 
         if (task.type == TaskType::RESET) {

@@ -1,710 +1,634 @@
-自定义真实多线程项目
-DandelionOS
+# DandelionOS
+
 Real-Time User-Level Thread Scheduler with Visualized Particle Interaction
 
-一、系统整体定位
-这是一个：
-用户态实时线程调度系统（User-Level Real-Time Scheduler）
-外层套一个：
-吹蒲公英交互可视化壳（Interactive Rendering Shell）
-核心不是小游戏。
-本质是：
-用可视化粒子系统实时展示线程调度、抢占、中断、恢复、RR时间片轮转。
+## 0. Canonical Rule
 
-二、系统总架构
-系统分为五层：
-┌─────────────────────────────┐
-│ UI Interaction Layer        │
-│ (Buttons / User Events)     │
-└──────────────┬──────────────┘
-              ↓
-┌─────────────────────────────┐
-│ Task Submission Layer       │
-│ Create / Queue / Replace    │
-└──────────────┬──────────────┘
-              ↓
-┌─────────────────────────────┐
-│ Scheduler Core              │
-│ Priority + Preemption + RR  │
-└──────────────┬──────────────┘
-              ↓
-┌─────────────────────────────┐
-│ Worker Threads              │
-│ Execute / Resume / Yield    │
-└──────────────┬──────────────┘
-              ↓
-┌─────────────────────────────┐
-│ RenderData Shared State     │
-└──────────────┬──────────────┘
-              ↓
-┌─────────────────────────────┐
-│ Renderer (Read Only)        │
-└─────────────────────────────┘
+本文件是当前唯一有效设计。
 
-三、核心设计原则
+旧版本、重复段落、互相冲突的描述一律以本文件靠前且更明确的规则为准。
+代码实现如果与本文件冲突，应以后续实现修正代码为目标，而不是反过来修改设计去迁就代码。
 
-1. 渲染读写隔离
-线程：
-只能写 RenderData
-Renderer：
-只能读 RenderData
-绝不允许：
-Renderer -> 修改粒子状态
-Renderer -> 修改 power
-Renderer -> 修改 mouth 坐标
-这是整个系统稳定性的基础。
+这次整理后的重点只聚焦三条主线：
 
-2. 所有共享资源必须互斥
-任何线程访问共享状态必须加锁。
+1. 摄像头任务
+2. 麦克风任务
+3. 粒子任务
 
-3. 调度权高于任务执行权
-任务永远不能“霸占线程”。
-每帧调度器重新决定：
-谁运行
-谁挂起
-谁恢复
-谁结束
+线程、UI、历史实现细节都服从这三条主线。
 
-4. 抢占必须可恢复
-只有：
-supportResume == true
-允许被中断后恢复。
-否则：
-直接 FINISHED。
+---
 
-四、全局共享状态
+## 1. System Goal
 
-4.1 蒲公英世界状态
+DandelionOS 不是小游戏。
+它是一个用户态实时线程调度系统，外层包一层“吹蒲公英”的可视化交互壳。
+
+系统要表达的核心是：
+
+- 任务创建
+- 排队
+- 顺序消费
+- 抢占
+- 中断
+- 恢复
+- RR 粒子推进
+
+其中最重要的真实交互链是：
+
+`CameraTask -> MicrophoneTask -> GenerateParticleTask / BreezeTask -> BatchParticleExecutionTask -> SingleParticleTask(P3...)`
+
+这条链一旦开始，就应该向前消费，不应该在中途回头重新开启 CameraTask。
+
+---
+
+## 2. Core Principles
+
+### 2.1 RenderData Read/Write Isolation
+
+- 任务线程可以写 `RenderData`
+- Renderer 只能读 `RenderData`
+- Renderer 绝不能修改：
+  - 粒子状态
+  - `power`
+  - `mouthX / mouthY`
+
+### 2.2 Shared State Must Be Locked
+
+所有共享状态访问必须加锁。
+
+锁顺序固定为：
+
+`particleMutex -> powerMutex -> renderMutex`
+
+### 2.3 Scheduling Has Higher Priority Than Execution
+
+任务不能无限霸占线程。
+调度器每帧都可以重新决定：
+
+- 谁运行
+- 谁等待
+- 谁恢复
+- 谁结束
+
+### 2.4 Only Resumable Tasks Can Be Interrupted
+
+只有 `supportResume == true` 的任务允许被中断后恢复。
+否则直接 `FINISHED`。
+
+---
+
+## 3. Global Shared State
+
+### 3.1 World State
+
+```cpp
 static float dandelionX;
 static float dandelionY;
 
-static int remainingParticles = 100;
-
-static float power = 0.1f;
-作用：
-dandelionX / dandelionY
-蒲公英中心坐标
-
-remainingParticles
-剩余附着粒子数
-范围：
-0 ~ 100
-
-power
-吹气力度
-范围：
-0.1 ~ 10
-换算：
-velocity = power * 100 px/s
-
-4.2 嘴部检测状态
 static float mouthX;
 static float mouthY;
-来源：
-CameraTask
-用途：
-计算吹气方向与强度。
 
-4.3 渲染共享结构
+static int remainingParticles = 100;
+static float power = 0.1f;
+```
+
+含义：
+
+- `dandelionX / dandelionY`
+  - 蒲公英中心坐标
+- `mouthX / mouthY`
+  - 当前嘴部中心坐标
+- `remainingParticles`
+  - 还附着在蒲公英上的粒子数
+- `power`
+  - 当前吹气强度，范围 `0.1 ~ 10`
+
+速度换算规则固定为：
+
+`velocity = power * 100 px/s`
+
+### 3.2 Device Availability State
+
+设备可用性不是“每一帧重新发明”的。
+
+系统在初始化阶段要完成一次设备探测，形成两个稳定标志：
+
+```cpp
+cameraDeviceAvailable
+microphoneDeviceAvailable
+```
+
+规则：
+
+- 初始化时探测到摄像头可用，则本轮运行中它就是“设备可用”
+- 初始化时探测到麦克风可用，则本轮运行中它就是“设备可用”
+- 某一帧没有拿到样本，不等于设备不可用
+- 样本 stale、没检测到脸、没检测到声音，只是“本帧输入无效”，不是设备消失
+
+也就是说：
+
+- `device available` 是启动时或 reset 时的能力判断
+- `sample ready / face detected / voice detected` 是运行时样本判断
+
+这两层状态必须分开。
+
+### 3.3 RenderData
+
+```cpp
 struct RenderData
 {
-   BackgroundLayer skyGrassLayer;
-
-   CameraLayer cameraLayer;
-
-   WindLayer windLayer;
-
-   std::vector<ParticleRenderData> particles;
-
-   UIRenderData ui;
+    BackgroundLayer backgroundLayer;
+    CameraLayer cameraLayer;
+    WindLayer windLayer;
+    std::vector<ParticleRenderData> particles;
+    UIRenderData ui;
 };
+```
 
-图层职责
+图层职责：
 
-Layer 1：Background
-静态：
-天空
-草地
+- `BackgroundLayer`
+  - 天空
+  - 草地
+- `CameraLayer`
+  - 摄像头画面或摄像头状态
+  - 嘴部框/嘴部标记
+- `WindLayer`
+  - 风线
+  - 风强变化
+- `ParticleLayer`
+  - 附着粒子
+  - 漂浮粒子
+- `UI`
+  - 线程状态
+  - 队列状态
+  - 粒子数量
+  - 设备状态
+  - 当前输入焦点
 
-Layer 2：Camera
-动态：
-摄像头画面
-嘴部检测框
+---
 
-Layer 3：Wind
-动态：
-风线
-风强颜色变化
+## 4. Thread Model
 
-Layer 4：Particle
-动态：
-附着粒子
-漂浮粒子
+### 4.1 ThreadState
 
-Layer 5：UI
-动态：
-线程状态
-粒子数量
-power
-设备状态
-
-4.4 Mutex系统
-
-particleMutex
-保护：
-粒子坐标
-粒子生命周期
-remainingParticles
-
-powerMutex
-保护：
-power
-
-renderMutex
-保护：
-整个：
-RenderData
-
-锁顺序必须固定：
-particleMutex
-→ powerMutex
-→ renderMutex
-避免死锁。
-这是实现时必须严格遵守的。
-
-五、全局帧率控制
-
-const int SYSTEM_FPS = 60;
-const double FRAME_TIME = 1.0 / SYSTEM_FPS;
-
-每轮调度：
-sleep_until(next_frame);
-作用：
-
-1. CPU节流
-避免 busy wait。
-
-2. RR统一时间片
-所有粒子任务：
-16ms
-与：
-60 FPS
-同步。
-
-3. 动画稳定
-保证视觉连续。
-
-六、线程系统
-
-6.1 ThreadState
+```cpp
 enum ThreadState
 {
-   IDLE,
-   RUNNING,
-   SLEEPING,
-   CLOSED,
-   WAITING
+    IDLE,
+    RUNNING,
+    SLEEPING,
+    CLOSED,
+    WAITING
 };
+```
 
-IDLE
-线程空闲，可调度。
+### 4.2 Thread Mode
 
-RUNNING
-执行任务。
+默认模式必须是单线程：
 
-SLEEPING
-线程存在，但不参与调度。
-用于线程模式切换。
+- `Thread1 = RUNNING / IDLE`
+- `Thread2 = SLEEPING / CLOSED`
+- `Thread3 = SLEEPING / CLOSED`
 
-CLOSED
-线程未创建 / 已销毁。
+双线程模式：
 
-WAITING
-阻塞等待资源。
+- `Thread1 = RUNNING / IDLE`
+- `Thread2 or Thread3 = RUNNING / IDLE`
+- 另一个 `SLEEPING / CLOSED`
 
-6.2 线程显示逻辑
+三线程模式：
 
-运行时：
-Thread 2 running task CameraTask
-Type: Priority 2
+- 三个线程都活跃
 
-状态切换：
-Thread 3 -> SLEEPING
+注意：
 
-6.3 线程模式
+线程数量变化只影响同时可执行的 worker 数量。
+任务链的逻辑顺序不因为线程数变化而改写。
 
-单线程模式
-Thread1 = RUNNING / IDLE
-Thread2 = SLEEPING / CLOSED
-Thread3 = SLEEPING / CLOSED
+---
 
-双线程模式
-Thread1 = RUNNING / IDLE
-Thread2 OR Thread3 = RUNNING / IDLE
-另一个 SLEEPING / CLOSED
+## 5. Task Model
 
-三线程模式
-全部活跃。
+### 5.1 TaskState
 
-七、任务系统
-
-7.1 TaskState
+```cpp
 enum TaskState
 {
-   CREATED,
-   RUNNING,
-   INTERRUPTED,
-   FINISHED,
-   REQUEUED
+    CREATED,
+    RUNNING,
+    INTERRUPTED,
+    FINISHED,
+    REQUEUED
 };
+```
 
-7.2 Task接口
+### 5.2 Task Interface
+
+```cpp
 struct Task
 {
-   int id;
+    int id;
+    TaskType type;
+    PriorityLevel priority;
+    TaskState state;
+    bool supportResume;
 
-   TaskType type;
-
-   PriorityLevel priority;
-
-   TaskState state;
-
-   bool supportResume;
-
-   virtual void execute() = 0;
-
-   virtual void resume() = 0;
+    virtual void execute() = 0;
+    virtual void resume() = 0;
 };
+```
 
-八、优先级调度体系
+---
 
-Priority 1 — System Critical
-最高级。
-可抢占：
-P2
-P3
-结构：
-LIFO
-容量：
-max = 2
+## 6. Queue and Priority Rules
 
-覆盖规则
-只检查栈顶。
-若类型相同：
-旧任务：
-FINISHED
-新任务覆盖。
+### 6.1 Priority
 
-Priority 2 — Functional Tasks
-中优先级。
-可抢占：
-P3
-不可抢占：
-P1
-结构：
-FIFO
-容量：
-max = 5
+- `P1`: system critical
+- `P2`: functional chain tasks
+- `P3`: particle tasks
 
-去重规则
-检查队首。
-若相同：
-替换。
+调度顺序永远是：
 
-若队列为空：
-自动加入：
-BatchParticleExecutionTask
-这是保持系统持续动画推进的关键。
+`P1 -> P2 -> P3`
 
-Priority 3 — Particle Tasks
-最低优先级。
-只能 RR。
-结构：
-FIFO
-容量：
-100
-时间片：
-RR_QUANTUM_MS = 16
+### 6.2 Preemption
 
-九、调度器核心
+- `P1` 可打断 `P2` 和 `P3`
+- `P2` 只能打断 `P3`
+- `P3` 不主动打断任何高优先级任务，只做 RR
 
-9.1 调度顺序
-固定：
-P1
-↓
-P2
-↓
-P3
+### 6.3 P3 RR
 
-9.2 抢占规则
+```cpp
+const int RR_QUANTUM_MS = 16;
+```
 
-P1进入
-立即打断：
-P2
-P3
+每个 `SingleParticleTask` 每次只推进一个 RR 时间片。
 
-P2进入
-只能打断：
-P3
+---
 
-P3
-不可主动抢占。
-仅轮转。
+## 7. Canonical Input and Particle Pipeline
 
-9.3 同优先级抢占
-你定义的是：
-到时间打断优先级最低的任务
- 若同级，打断第一个线程
-整理后：
-if (quantumExpired)
-{
-   preempt(lowestPriorityRunningTask);
+这是本文件最重要的部分。
 
-   if (tie)
-       preempt(firstScheduledThread);
-}
+### 7.1 Initialization Rule
 
-9.4 resume机制
+启动或 Reset 完成后，要先探测设备能力，然后按下面规则只放入一个输入起点：
 
-若：
-supportResume == true
-保存上下文：
-TaskContext
-重新入队。
+#### Case A: Camera available
 
-否则：
-FINISHED
+初始化只开启：
 
-十、系统启动流程
+`CameraTask`
 
-StartTask（P1）
+#### Case B: No camera, microphone available
 
-Phase 1：线程初始化
-根据硬件能力：
+初始化不要让所有线程卡在等待 CameraTask。
+应直接开启：
 
-3线程
-T1 RUNNING
-T2 SLEEPING
-T3 SLEEPING
+`MicrophoneTask`
 
-2线程
-T1 RUNNING
-T2 SLEEPING
-T3 CLOSED
+#### Case C: Neither camera nor microphone available
 
-1线程
-T1 RUNNING
-T2 CLOSED
-T3 CLOSED
+不自动创建 `CameraTask`。
+系统保持空闲，等待显式用户事件或后续 reset/restart 触发。
 
-Phase 2：创建图层
-按顺序：
-skyGrassLayer
-cameraLayer
-windLayer
-particleLayer
+### 7.2 One-Way Consumption Rule
 
-Phase 3：UI按钮
+从输入开始后的功能链必须是单向消费：
 
-第一栏
-Camera Toggle
+`CameraTask -> MicrophoneTask -> GenerateParticleTask / BreezeTask -> BatchParticleExecutionTask -> SingleParticleTask...`
 
-第二栏
-Microphone Toggle
+规则：
 
-第三栏
-Reset
-Change Dandelion
-Breeze
+- 一旦链条开始向后推进，就不回头重新插入 `CameraTask`
+- `CameraTask` 不是永久 resident 循环任务
+- `MicrophoneTask` 不是永久 resident 循环任务
+- `BatchParticleExecutionTask` 不是“永远在 P2 里自转”的任务
 
-第四栏
-线程 + / -
+它们都是这条链上的阶段性任务。
 
-第五栏
-Exit
+### 7.3 Reopen CameraTask Rule
 
-Phase 4：提交ResetTask
-push(P1, ResetTask)
+重新开启 `CameraTask` 的唯一方法是：
 
-十一、ResetTask（P1）
+`P1 == 0 && P2 == 0 && P3 == 0`
 
-Step 1 清空系统
-打断全部线程。
-若任务不可中断：
-线程进入 WAITING。
+也就是三个优先级队列全部为空时，系统才允许重新回到输入起点。
 
-清空：
-P2队列（保留运行中的CameraTask）
-P3队列
+这条规则是硬约束。
 
-Step 2 初始化变量
-remainingParticles = 100;
-power = 0.1f;
-mouth = dandelion center;
+不允许：
 
-Step 3 重建100粒子
-圆形均匀分布。
+- 粒子还没清空时重新开 `CameraTask`
+- `BatchParticleExecutionTask` 还没结束时回头开 `CameraTask`
+- 正在 `MicrophoneTask` 链中途时回头插入 `CameraTask`
 
-Step 4 更新UI
-显示：
-线程状态
-剩余粒子
-Camera
-Microphone
-Mouth
-Power
+---
 
-Step 5 自动恢复
-若无CameraTask：
-加入：
-CameraTask
+## 8. CameraTask
 
-十二、功能任务链（P2）
-这是系统的主功能流水线。
+### 8.1 Responsibility
 
-CameraTask
-功能：（只有这里使用mediapipe完成，这是python任务，其他的是C++）
-检测嘴部。直到嘴巴张开结束。
+`CameraTask` 负责：
 
-运行：
-更新：
-mouthX
-mouthY
-cameraLayer
+- 获取摄像头样本状态
+- 更新 `mouthX / mouthY`
+- 判断嘴是否有效打开
+- 决定是否把链条交给 `MicrophoneTask`
 
-若Camera不可用：
-切换：
-MicrophoneTask
+### 8.2 Availability Semantics
 
-结束：
-加入：
-MicrophoneTask
+`CameraTask` 要区分三类状态：
 
-队列约束：
-CameraTask 必须在 MicrophoneTask 前
+1. 设备不可用
+2. 设备可用但当前样本无效
+3. 设备可用且当前样本有效
 
-MicrophoneTask
-功能：(内部设置一个状态，当任务开启时状态第一次就保持，直到麦克风第一次检查到声音，状态关闭方便后续声音结束后任务消失。)
-生成 power
+其中：
 
-计算：
-power = f(volume, direction)
-限制：
-0.1 ≤ power ≤ 10
+- 设备不可用：来自初始化能力探测
+- 样本无效：比如没脸、闭嘴、没正视、样本 stale
 
-视觉：
-音量越强：
-风线越深。
+### 8.3 Lifecycle
 
-若麦克风不可用：
-切：
-BreezeTask
+如果 `cameraDeviceAvailable == true`：
 
-结束：
-加入：
-GenerateParticleTask
+- `CameraTask` 启动后持续消费自己的阶段
+- 它的结束条件来自内部判断，不来自外层“随机轮到别的 resident 任务”
+- 只有当嘴部打开条件成立，或者确认要降级到麦克风路径时，它才结束并交棒
 
-队列规则：
-不能在 CameraTask 前。
+### 8.4 Output Rule
 
-GenerateParticleTask
-作用：
-批量创建 P3。
+`CameraTask` 结束后只能做一件事：
+
+- 推入 `MicrophoneTask`
+
+不能同时回头再给自己排一个新的 `CameraTask`。
+
+---
+
+## 9. MicrophoneTask
+
+### 9.1 Responsibility
+
+`MicrophoneTask` 负责：
+
+- 获取麦克风样本
+- 计算 `power`
+- 判断是正常吹气、fallback，还是没有有效声音
+
+### 9.2 Availability Semantics
+
+和摄像头一样，要分清：
+
+1. 设备不可用
+2. 设备可用但本帧样本无效
+3. 设备可用且本帧样本有效
+
+### 9.3 Lifecycle
+
+`MicrophoneTask` 不是无限 resident 监听任务。
+
+它的正确行为是：
+
+- 开始后锁住自己的阶段
+- 保持状态直到第一次检测到有效声音或 fallback 条件
+- 一旦拿到本轮要消费的输入，就结束自己，把控制交给下游任务
+
+也就是说：
+
+`MicrophoneTask` 的打断点必须来自它内部的“第一次有效输入”方程，而不是来自外部 resident 轮转。
+
+### 9.4 Output Rule
+
+麦克风阶段结束后：
+
+- 如果有正常声音，推入 `GenerateParticleTask`
+- 如果麦克风不可用或只满足 fallback 条件，推入 `BreezeTask`
+- 如果没有有效输入，则本轮链条结束，不回头自动重开 `CameraTask`
+
+因为重新开启 `CameraTask` 只能等到：
+
+`P1 == 0 && P2 == 0 && P3 == 0`
+
+---
+
+## 10. GenerateParticleTask and BreezeTask
+
+### 10.1 GenerateParticleTask
+
+职责：
+
+- 根据 `power` 计算生成数量
+- 创建多个 `SingleParticleTask`
+- 更新粒子附着/脱离状态
 
 流程：
-1
-检查队列容量
 
-2
-根据 power：
-count = floor(power * k)
+1. 检查 `P3` 容量
+2. 根据 `power` 计算本轮数量
+3. 为每个粒子创建 `SingleParticleTask`
+4. 推入 `BatchParticleExecutionTask`
 
-3
-生成多个 SingleParticleTask
+### 10.2 BreezeTask
 
-4
-更新渲染
+职责：
 
-BreezeTask
-降级模拟。
+- 作为降级路径
+- 固定 `power = 5`
+- 创建一个单粒子任务
+- 然后也要进入 `BatchParticleExecutionTask`
 
-固定：
-power = 5
-生成单粒子。
+### 10.3 No Backtracking
 
-ChangeDandelionTask
-重新生成蒲公英。
+无论是 `GenerateParticleTask` 还是 `BreezeTask`，都只能继续往后推。
 
-重建：
-100粒子。
+不能：
 
-若系统空闲：
-查询所有线程。
-若无CameraTask：
-加入：
-CameraTask
+- 重新开 `CameraTask`
+- 重新开 `MicrophoneTask`
+- 在粒子链没清空时回到输入阶段
 
-十三、粒子执行体系
+---
 
-BatchParticleExecutionTask
-作用：
-统一推进世界时间。
+## 11. BatchParticleExecutionTask
 
-首次：
-记录：
-lastTime
+### 11.1 Responsibility
+
+`BatchParticleExecutionTask` 是世界级粒子推进任务。
+
+它负责：
+
+- 记录 world tick 的起始时间
+- 更新本轮 world delta
+- 推动粒子阶段向 `P3` RR 执行
+- 控制 `power` 的时间衰减
+- 清理完成后的粒子可视状态
+
+### 11.2 Lifecycle
+
+它在输入链之后启动。
+
+它的定位不是永久常驻任务，而是这轮粒子系统的批处理调度入口。
+
+只有在本轮粒子任务全部完成后，它才结束。
+
+### 11.3 Decay Rule
 
 每秒：
-power -= 0.01
-直到：
-power >= 0.1
 
-结束：
-不保存局部时间。
-因为它是世界tick。
+`power -= 0.01`
 
-SingleParticleTask（P3）
-每个粒子独立任务。这是写入任务，将坐标写入任务状态里，给渲染任务读取。
+下限为：
 
-局部：
-float x;
-float y;
+`0.1`
 
-运行：
-deltaTime = 16ms
-distance = velocity * deltaTime
+### 11.4 Output Rule
 
-边界：
-若超窗体：
-FINISHED
-删除渲染。
+`BatchParticleExecutionTask` 不回头开启输入任务。
 
-被打断：
-保存：
-x,y
-重新入队尾。
+它只向后服务于：
 
-十四、线程模式切换
-注意：
-你这里设计得很对。
-不是销毁线程。
-是：
-降级为 SLEEPING
-这是用户态线程池正确做法。
+`SingleParticleTask(P3...)`
 
-一线程模式
+等 `P3` 清空之后，整个系统才允许回到输入起点。
 
-停止：
-T2 T3
+---
 
-保存任务顺序：
-先T3
-后T2
-压回队列。
+## 12. SingleParticleTask (P3)
 
-状态：
-T2 -> SLEEPING
-T3 -> SLEEPING
+### 12.1 Responsibility
 
-两线程模式
-停止：
-T3
+每个粒子是一个独立的 `P3` 任务。
 
-保存任务。
+职责：
 
-状态：
-T3 -> SLEEPING
-T2 -> IDLE
+- 保存自己的局部坐标
+- 保存自己的飞行方向
+- 每次 RR 推进一个时间片
+- 将结果写回粒子共享状态与渲染层
 
-三线程模式
-恢复：
-T2 -> IDLE
-T3 -> IDLE
+### 12.2 Movement Rule
 
-十五、退出任务
+每次运行：
 
-ExitTask（P1）
-执行：
-shutdown();
+- `deltaTime = 16 ms`
+- `distance = velocity * deltaTime`
+- `velocity = power * 100 px/s`
 
-释放：
-所有线程
-所有mutex
-RenderData
-Device handles
+粒子每次只推进一个时间片的位移。
 
-十六、完整系统生命周期
-StartTask
-  ↓
-ResetTask
-  ↓
-CameraTask
-  ↓
-MicrophoneTask
-  ↓
-GenerateParticleTask / BreezeTask
-  ↓
-BatchParticleExecutionTask
-  ↓
-SingleParticleTasks RR
-期间：
-任何时刻：
-Priority1 可抢占全部
+### 12.3 Finish Rule
 
-十七、运行时真实行为（一次吹气）
-用户吹气：
-↓
-CameraTask检测嘴
-↓
-MicrophoneTask算power
-↓
-GenerateParticleTask创建粒子
-↓
-多个SingleParticleTask入P3
-↓
-调度器RR轮转
-↓
-粒子飞散
-↓
-BatchTask衰减power
-↓
-恢复CameraTask监听下一次吹气
+如果粒子移动到窗口边缘：
 
-系统循环链条
-Start
-↓
-Reset
-↓
-Scheduler Loop
-   ├── Camera (resident)
-   ├── Mic (resident)
-   ├── Batch (daemon)
-   ├── Generate (event)
-   └── Particle RR
+- 该粒子任务 `FINISHED`
+- 从 `P3` 中移除
+- 粒子可视记录进入清理流程
 
+不允许再回头触发输入任务。
 
-十八、系统本质总结
-这套系统完整实现后，本质是：
+---
 
-1
-用户态线程调度器
-包含：
-抢占
-RR
-resume
-queue replacement
+## 13. Reset Rule
 
-2
-实时共享状态同步系统
-包含：
-mutex
-render isolation
-lock ordering
+`ResetTask(P1)` 做的事情：
 
-3
-可视化OS模拟器
-线程状态直接映射到动画。
+1. 清空当前任务链
+2. 重置全局坐标和粒子状态
+3. 重新探测设备能力
+4. 按初始化规则选择新的输入起点
 
-4
-粒子驱动任务计算平台
-每个粒子 = 独立可调度任务
+Reset 后的起点规则仍然是：
+
+- 有摄像头：从 `CameraTask` 开始
+- 无摄像头但有麦克风：从 `MicrophoneTask` 开始
+- 两者都无：保持空闲
+
+---
+
+## 14. SDL Visualization Requirements
+
+可视化必须清楚展示以下内容：
+
+### 14.1 Device State
+
+- Camera device available / unavailable
+- Camera sample state
+- Microphone device available / unavailable
+- Microphone sample state
+
+### 14.2 Input Focus
+
+必须显式显示当前输入焦点：
+
+- `CAMERA FOCUS`
+- `MIC FOCUS`
+- `GATE OPEN`
+- `FREE FOCUS`
+
+### 14.3 Queue State
+
+- `P1` 数量
+- `P2` 数量
+- `P3` 数量
+
+### 14.4 Particle State
+
+- 剩余附着粒子数
+- 当前排队粒子任务数
+- 飞行中的粒子
+- 边界清理状态
+
+---
+
+## 15. Non-Negotiable Rules
+
+下面这些是当前版本最重要、最不能再被旧段落改写的规则：
+
+1. 初始化探测到摄像头可用，就把它视为本轮运行中设备可用；麦克风同理。
+2. 没有摄像头时，不允许让所有线程在等待 CameraTask 的状态下空转；必须直接从 `MicrophoneTask` 开始。
+3. `CameraTask -> MicrophoneTask -> BatchParticleExecutionTask` 属于顺序消费链，推进后不回头。
+4. `GenerateParticleTask / BreezeTask` 只能向后推动粒子链，不能回头重新开输入任务。
+5. 重新开启 `CameraTask` 的唯一条件是：`P1 == 0 && P2 == 0 && P3 == 0`。
+6. 摄像头和麦克风阶段的结束/切换，应由任务内部条件决定，而不是由外层 resident 循环碰运气决定。
+
+---
+
+## 16. Canonical Execution Summary
+
+最简完整流程如下：
+
+### Startup
+
+- 探测 camera / microphone device availability
+- 选择输入起点
+
+### Input Phase
+
+- 如果有 camera：`CameraTask`
+- 否则如果有 microphone：`MicrophoneTask`
+
+### Blow Phase
+
+- `CameraTask` 成功后进入 `MicrophoneTask`
+- `MicrophoneTask` 成功后进入：
+  - `GenerateParticleTask`
+  - 或 `BreezeTask`
+
+### World Phase
+
+- `BatchParticleExecutionTask`
+- `SingleParticleTask...` in `P3 RR`
+
+### Restart Condition
+
+只有当：
+
+`P1 == 0 && P2 == 0 && P3 == 0`
+
+才允许重新回到 `CameraTask` 作为下一轮输入起点。

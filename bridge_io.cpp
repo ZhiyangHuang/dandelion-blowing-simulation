@@ -444,8 +444,8 @@ std::string parse_json_string(const std::string& text,
 
 void load_camera_bridge_from_json(const std::string& payload) {
     CameraBridgeState parsed{};
-    parsed.bridge_connected = true;
-    parsed.sample_ready = true;
+    parsed.bridge_connected = parse_json_bool(payload, "bridge_connected", true);
+    parsed.sample_ready = parse_json_bool(payload, "sample_ready", true);
     parsed.face_detected = parse_json_bool(payload, "face_detected", false);
     parsed.mouth_open_state = parse_json_bool(payload, "mouth_open_state", false);
     parsed.looking_forward = parse_json_bool(payload, "looking_forward", false);
@@ -456,15 +456,16 @@ void load_camera_bridge_from_json(const std::string& payload) {
     parsed.mouth_open_ratio = std::max(0.0f, parse_json_float(payload, "mouth_open_ratio", 0.0f));
     parsed.timestamp_ms = parse_json_int64(payload, "timestamp_ms", 0);
     parsed.backend = parse_json_string(payload, "backend", "camera-json-bridge");
+    parsed.status_text = parse_json_string(payload, "status_text", "camera bridge packet received");
 
     runtime_state().camera_bridge = parsed;
-    runtime_state().camera_available = parsed.face_detected;
+    runtime_state().camera_device_available = parsed.bridge_connected;
 }
 
 void load_microphone_bridge_from_json(const std::string& payload) {
     MicrophoneBridgeState parsed{};
-    parsed.bridge_connected = true;
-    parsed.sample_ready = true;
+    parsed.bridge_connected = parse_json_bool(payload, "bridge_connected", true);
+    parsed.sample_ready = parse_json_bool(payload, "sample_ready", true);
     parsed.voice_detected = parse_json_bool(payload, "voice_detected", false);
     parsed.fallback_requested = parse_json_bool(payload, "fallback_requested", false);
     parsed.suggested_power = std::clamp(parse_json_float(payload, "suggested_power", 0.1f), 0.1f, 10.0f);
@@ -475,7 +476,7 @@ void load_microphone_bridge_from_json(const std::string& payload) {
     parsed.backend = parse_json_string(payload, "backend", "microphone-json-bridge");
 
     runtime_state().microphone_bridge = parsed;
-    runtime_state().microphone_available = parsed.voice_detected;
+    runtime_state().microphone_device_available = parsed.bridge_connected;
 }
 
 }  // namespace
@@ -496,7 +497,7 @@ void refresh_bridge_inputs() {
     MicrophoneBridgeState native_state;
     if (native_microphone_bridge().refresh(native_state)) {
         runtime_state().microphone_bridge = native_state;
-        runtime_state().microphone_available = native_state.voice_detected;
+        runtime_state().microphone_device_available = native_state.bridge_connected;
     }
 #endif
 }

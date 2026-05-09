@@ -87,6 +87,7 @@ struct UIRenderData {
     std::string banner = "Scaffold";
     std::string scheduler_state = "Idle";
     std::string phase_label = "BOOTSTRAP";
+    std::string input_focus_status = "FREE FOCUS";
     std::string camera_task_status = "offline";
     std::string microphone_task_status = "offline";
     std::string generate_task_status = "idle";
@@ -111,9 +112,12 @@ struct RuntimeThread {
     ThreadState state = ThreadState::IDLE;
     std::string label;
     int bound_task_id = -1;
+    std::string bound_task_name = "none";
     int dispatch_count = 0;
     int last_completed_task_id = -1;
+    std::string last_completed_task_name = "none";
     std::string last_task_event = "idle";
+    std::string last_task_transition = "created";
 };
 
 struct TaskRecord {
@@ -172,6 +176,7 @@ struct CameraBridgeState {
     float mouth_open_ratio = 0.0f;
     long long timestamp_ms = 0;
     std::string backend = "camera-bridge-unset";
+    std::string status_text = "camera bridge idle";
 };
 
 struct MicrophoneBridgeState {
@@ -190,10 +195,17 @@ struct MicrophoneBridgeState {
 struct RuntimeState {
     RuntimePhase phase = RuntimePhase::BOOTSTRAP;
     bool shutdown_requested = false;
+    bool camera_device_available = false;
+    bool microphone_device_available = false;
     bool camera_available = false;
     bool microphone_available = false;
+    bool camera_focus_locked = true;
+    bool microphone_focus_locked = false;
+    bool microphone_focus_consumed_for_gate = false;
     bool camera_gate_open = false;
     int camera_gate_frame = -1;
+    long long camera_gate_until_ms = 0;
+    long long microphone_focus_until_ms = 0;
     long long last_consumed_microphone_sample_ms = 0;
     SharedWorldState world;
     CameraBridgeState camera_bridge;
@@ -315,7 +327,8 @@ private:
     void run_cycle(bool resumed);
 
     int tick_count_ = 0;
-    int decay_accumulator_ = 0;
+    int decay_accumulator_ms_ = 0;
+    bool started_ = false;
 };
 
 class SingleParticleTask final : public Task {
@@ -335,8 +348,9 @@ private:
     bool completed_ = false;
     float x_ = 0.0f;
     float y_ = 0.0f;
-    float vx_ = 0.0f;
-    float vy_ = 0.0f;
+    float dir_x_ = 0.0f;
+    float dir_y_ = 0.0f;
+    float distance_per_tick_ = 0.0f;
 };
 
 void bootstrap_runtime();

@@ -154,10 +154,17 @@ void reset_simulation_world() {
         g_runtime_state.world.remaining_particles = 100;
         g_runtime_state.world.queued_particle_tasks = 0;
         g_runtime_state.world.power = 0.1f;
+        g_runtime_state.camera_device_available = false;
+        g_runtime_state.microphone_device_available = false;
         g_runtime_state.camera_available = false;
         g_runtime_state.microphone_available = false;
+        g_runtime_state.camera_focus_locked = true;
+        g_runtime_state.microphone_focus_locked = false;
+        g_runtime_state.microphone_focus_consumed_for_gate = false;
         g_runtime_state.camera_gate_open = false;
         g_runtime_state.camera_gate_frame = -1;
+        g_runtime_state.camera_gate_until_ms = 0;
+        g_runtime_state.microphone_focus_until_ms = 0;
         g_runtime_state.last_consumed_microphone_sample_ms = 0;
         g_runtime_state.camera_bridge = CameraBridgeState{};
         g_runtime_state.microphone_bridge = MicrophoneBridgeState{};
@@ -177,6 +184,7 @@ void reset_simulation_world() {
         g_render_data.ui.banner = "DandelionOS Runtime Scaffold";
         g_render_data.ui.scheduler_state = "Idle";
         g_render_data.ui.phase_label = runtime_phase_label(g_runtime_state.phase);
+        g_render_data.ui.input_focus_status = "FREE FOCUS";
         g_render_data.ui.camera_task_status = "offline";
         g_render_data.ui.microphone_task_status = "offline";
         g_render_data.ui.generate_task_status = "idle";

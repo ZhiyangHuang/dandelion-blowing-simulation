@@ -1,5 +1,6 @@
 import json
 import math
+import os
 import shutil
 import sys
 import tempfile
@@ -23,6 +24,7 @@ ROOT = Path(__file__).resolve().parent
 OUT_PATH = ROOT / "camera_bridge_latest.json"
 TMP_PATH = ROOT / "camera_bridge_latest.tmp"
 TASK_PATH = ROOT / "face_landmarker.task"
+REOPEN_DELAY_SECONDS = 1.0
 
 MOUTH_LEFT = 61
 MOUTH_RIGHT = 291
@@ -35,8 +37,18 @@ def clamp(value: float, lo: float, hi: float) -> float:
 
 
 def write_packet(packet: dict) -> None:
-    TMP_PATH.write_text(json.dumps(packet), encoding="utf-8")
-    TMP_PATH.replace(OUT_PATH)
+    payload = json.dumps(packet)
+    last_error: Exception | None = None
+    for _ in range(8):
+        try:
+            TMP_PATH.write_text(payload, encoding="utf-8")
+            os.replace(TMP_PATH, OUT_PATH)
+            return
+        except PermissionError as exc:
+            last_error = exc
+            time.sleep(0.01)
+    if last_error is not None:
+        raise last_error
 
 
 def resolve_model_path(original_path: Path) -> Path:
@@ -58,6 +70,8 @@ def build_empty_packet(backend: str) -> dict:
     return {
         "timestamp_ms": int(time.time() * 1000),
         "backend": backend,
+        "bridge_connected": False,
+        "sample_ready": False,
         "face_detected": False,
         "mouth_open_state": False,
         "mouth_open_ratio": 0.0,
@@ -69,7 +83,38 @@ def build_empty_packet(backend: str) -> dict:
         "yaw_deg": 0.0,
         "roll_deg": 0.0,
         "looking_forward": False,
+        "status_text": "camera bridge idle",
     }
+
+
+def camera_candidates() -> list[tuple[int, int | None, str]]:
+    candidates: list[tuple[int, int | None, str]] = []
+    backend_options = [
+        ("dshow", getattr(cv2, "CAP_DSHOW", None)),
+        ("msmf", getattr(cv2, "CAP_MSMF", None)),
+        ("default", None),
+    ]
+    for index in range(3):
+        for backend_name, backend_value in backend_options:
+            candidates.append((index, backend_value, backend_name))
+    return candidates
+
+
+def open_best_camera() -> tuple[cv2.VideoCapture | None, str]:
+    last_label = "camera-open-failed"
+    for index, backend, backend_name in camera_candidates():
+        label = f"camera{index}-{backend_name}"
+        last_label = label
+        cap = cv2.VideoCapture(index) if backend is None else cv2.VideoCapture(index, backend)
+        if not cap.isOpened():
+            cap.release()
+            continue
+
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        return cap, label
+
+    return None, last_label
 
 
 class FaceMeshFallbackTracker:
@@ -88,6 +133,9 @@ class FaceMeshFallbackTracker:
 
     def process(self, frame_bgr) -> dict:
         packet = build_empty_packet(self.backend_name)
+        packet["bridge_connected"] = True
+        packet["sample_ready"] = True
+        packet["status_text"] = "camera sample ready, no face"
         frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         result = self.face_mesh.process(frame_rgb)
 
@@ -106,6 +154,8 @@ class FaceMeshFallbackTracker:
 
         packet.update(
             {
+                "bridge_connected": True,
+                "sample_ready": True,
                 "face_detected": True,
                 "mouth_open_ratio": ratio,
                 "mouth_center_x": clamp((left.x + right.x + top.x + bottom.x) * 0.25, 0.0, 1.0),
@@ -113,6 +163,7 @@ class FaceMeshFallbackTracker:
                 "confidence": 0.7,
                 "jaw_open_score": ratio,
                 "looking_forward": True,
+                "status_text": "face mesh fallback sample ready",
             }
         )
         return packet
@@ -159,7 +210,7 @@ class FaceLandmarkerTracker:
 
     @staticmethod
     def is_looking_forward(pitch: float, yaw: float, roll: float) -> bool:
-        return abs(yaw) < 10.0 and abs(pitch) < 10.0 and abs(roll) < 15.0
+        return abs(yaw) < 18.0 and abs(pitch) < 20.0 and abs(roll) < 18.0
 
     @staticmethod
     def blendshape_map(result) -> dict[str, float]:
@@ -172,6 +223,9 @@ class FaceLandmarkerTracker:
 
     def process(self, frame_bgr) -> dict:
         packet = build_empty_packet(self.backend_name)
+        packet["bridge_connected"] = True
+        packet["sample_ready"] = True
+        packet["status_text"] = "camera sample ready, no face"
         frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
         result = self.detector.detect(mp_image)
@@ -200,6 +254,8 @@ class FaceLandmarkerTracker:
 
         packet.update(
             {
+                "bridge_connected": True,
+                "sample_ready": True,
                 "face_detected": True,
                 "mouth_open_ratio": ratio,
                 "mouth_center_x": clamp((left.x + right.x + top.x + bottom.x) * 0.25, 0.0, 1.0),
@@ -210,6 +266,7 @@ class FaceLandmarkerTracker:
                 "yaw_deg": yaw,
                 "roll_deg": roll,
                 "looking_forward": looking_forward,
+                "status_text": "face tracked" if looking_forward else "face tracked, not forward",
             }
         )
         return packet
@@ -217,15 +274,14 @@ class FaceLandmarkerTracker:
 
 class StableMouthBridge:
     def __init__(self) -> None:
-        self.cap = cv2.VideoCapture(0)
-        if not self.cap.isOpened():
-            raise RuntimeError("failed to open webcam")
-
-        self.open_threshold_ratio = 0.08
-        self.close_threshold_ratio = 0.045
-        self.open_threshold_jaw = 0.28
-        self.close_threshold_jaw = 0.12
+        self.open_threshold_ratio = 0.04
+        self.close_threshold_ratio = 0.025
+        self.open_threshold_jaw = 0.18
+        self.close_threshold_jaw = 0.08
         self.mouth_open_state = False
+        self.cap = None
+        self.camera_backend = "camera-not-open"
+        self.last_open_attempt_ms = 0.0
 
         self.detector = self._build_detector()
 
@@ -242,18 +298,33 @@ class StableMouthBridge:
 
     def close(self) -> None:
         self.detector.close()
-        self.cap.release()
+        if self.cap is not None:
+            self.cap.release()
+            self.cap = None
+
+    def ensure_camera(self) -> bool:
+        now = time.time()
+        if self.cap is not None and self.cap.isOpened():
+            return True
+        if now - self.last_open_attempt_ms < REOPEN_DELAY_SECONDS:
+            return False
+
+        self.last_open_attempt_ms = now
+        cap, backend = open_best_camera()
+        self.camera_backend = backend
+        if cap is None:
+            self.cap = None
+            return False
+
+        self.cap = cap
+        return True
 
     def update_hysteresis(self, packet: dict) -> None:
         ratio = float(packet.get("mouth_open_ratio", 0.0))
         jaw_open = float(packet.get("jaw_open_score", 0.0))
-        looking_forward = bool(packet.get("looking_forward", True))
 
         open_signal = ratio >= self.open_threshold_ratio or jaw_open >= self.open_threshold_jaw
         close_signal = ratio <= self.close_threshold_ratio and jaw_open <= self.close_threshold_jaw
-
-        if not looking_forward:
-            open_signal = False
 
         if not self.mouth_open_state and open_signal:
             self.mouth_open_state = True
@@ -265,14 +336,36 @@ class StableMouthBridge:
     def run(self) -> int:
         try:
             while True:
+                if not self.ensure_camera():
+                    packet = build_empty_packet(self.camera_backend)
+                    packet["status_text"] = f"camera unavailable via {self.camera_backend}"
+                    write_packet(packet)
+                    time.sleep(0.05)
+                    continue
+
                 ok, frame = self.cap.read()
                 if not ok or frame is None:
+                    packet = build_empty_packet(self.camera_backend)
+                    packet["bridge_connected"] = True
+                    packet["status_text"] = f"camera opened on {self.camera_backend}, waiting for frame"
+                    write_packet(packet)
                     time.sleep(0.03)
                     continue
 
                 packet = self.detector.process(frame)
                 self.update_hysteresis(packet)
                 packet["timestamp_ms"] = int(time.time() * 1000)
+                packet["backend"] = f"{packet.get('backend', 'camera-bridge')}@{self.camera_backend}"
+                if not packet.get("face_detected", False):
+                    packet["status_text"] = "camera sample ready, no face"
+                elif packet.get("mouth_open_state", False) and not packet.get("looking_forward", True):
+                    packet["status_text"] = "mouth open, not forward"
+                elif not packet.get("looking_forward", True):
+                    packet["status_text"] = "face tracked, not forward"
+                elif not packet.get("mouth_open_state", False):
+                    packet["status_text"] = "face tracked, mouth closed"
+                else:
+                    packet["status_text"] = "face tracked, mouth open"
                 write_packet(packet)
                 time.sleep(0.01)
         finally:

@@ -13,7 +13,7 @@ Design alignment summary
 - The project now matches the high-level DESIGN.md structure:
   - P1 / P2 / P3 queue separation exists.
   - StartTask / ResetTask / ExitTask exist.
-  - CameraTask / MicrophoneTask / BatchParticleExecutionTask exist as resident runtime tasks.
+  - CameraTask / MicrophoneTask / BatchParticleExecutionTask now participate in a one-way runtime chain instead of a resident loop.
   - GenerateParticleTask creates P3 particle tasks.
   - BreezeTask exists as a fallback P2 task with fixed-power particle generation.
   - ChangeDandelionTask exists as a P2 task that rebuilds the dandelion cluster.
@@ -22,9 +22,10 @@ Design alignment summary
 - The main remaining gap is behavioral rather than structural:
   - CameraTask now enforces bridge sample freshness / staleness handling, but still needs tuning against real live camera behavior and mouth-state thresholds
   - MicrophoneTask now supports native C++ capture and JSON/offline bridge input, and consumes each bridge sample once, but breath / voiced / silence classification is still heuristic
-  - BatchParticleExecutionTask now drives world decay and cleanup, but still does a simplified world tick compared with full DESIGN.md timing semantics
-  - resident task yielding now allows pending P3 work to drain with single-thread alternation, multi-thread resident/P3 sharing, and same-frame tie-break selection, but the exact fairness policy is still simpler than full DESIGN.md RR semantics
+  - BatchParticleExecutionTask now records the first world tick, decays `power` in 1-second steps, cleans detached boundary-stopped particles, and finishes when no particle work remains, but still does a simplified world tick compared with full DESIGN.md timing semantics
+  - queue fairness around `BatchParticleExecutionTask` plus `P3 RR` is now chain-aware rather than resident-aware, but the exact policy is still simpler than full DESIGN.md RR semantics
   - SDL visualization now reflects the layer split much more clearly, but the camera layer still shows a bridge-status viewport rather than a real embedded camera frame texture
+  - `SingleParticleTask` now advances particles using `power * 100 px/s` with `RR_QUANTUM_MS = 16`, but there is still room to refine how live mouth/microphone direction should shape spread and flight aesthetics
 
 Audit against DESIGN.md
 - Completed with meaningful behavior:
@@ -39,10 +40,14 @@ Audit against DESIGN.md
   - offline replay writers for local image and audio samples
   - direct end-to-end validation of `CameraTask -> MicrophoneTask -> Generate/Breeze -> P3`
   - particle boundary-stop and completion-cleanup behavior
-  - resident P2 yielding so replay particle work can complete without manually draining functional tasks
+  - non-resident `P2` chain staging so replay particle work can complete without manually draining functional tasks
   - one-sample-one-trigger microphone semantics so deterministic replay finishes instead of endlessly re-spawning particle work
   - same-frame preemption victim selection closer to DESIGN.md `lowestPriorityRunningTask` plus `tie -> firstScheduledThread`
   - BatchParticleExecutionTask world-tick responsibilities for decay, particle render cleanup, and remaining-particle reconciliation
+  - SingleParticleTask motion is now time-driven instead of fixed-3-cycle completion:
+    - spawn direction is primarily outward from the dandelion center
+    - distance per dispatch uses `power * 100 px/s` and the 16 ms RR quantum
+    - particles now finish on boundary exit instead of an arbitrary cycle cap
   - particle slot ownership tokens and repeated-replay consistency checks
   - unified `queued_particle_tasks` reconciliation from actual P3 queue state plus in-flight particle work, including mixed resident load and partial-frame interruption
 - live `main.cpp` entry now launches the real Python MediaPipe camera bridge and uses native C++ microphone capture for manual end-to-end testing
@@ -147,10 +152,62 @@ Completed
   - installing `opencv-python` and `mediapipe` into the runtime Python environment
   - downloading `face_landmarker.task` into the project for the tasks API path
   - patching `python_mediapipe_bridge.py` so the model is copied to an ASCII temp path before loading, which avoids Unicode-path failures on Windows
+- Hardened live camera access so the bridge now:
+  - tries multiple OpenCV camera backends and device indexes instead of relying on a single default open path
+  - reports `bridge_connected`, `sample_ready`, backend label, and camera status text back through `camera_bridge_latest.json`
+  - distinguishes `camera unavailable`, `camera opened but waiting for frame`, `sample ready, no face`, and `face tracked` states in the runtime UI
+- Hardened live launcher camera startup so `main.cpp` now:
+  - marks the camera bridge as `starting` before the first packet arrives
+  - waits briefly for the first live camera packet after auto-start
+  - records a runtime note if the bridge process starts but no packet arrives during the startup window
+- Expanded live thread diagnostics so SDL now shows per-thread:
+  - current state
+  - currently bound task
+  - last event
+  - last completed task
+  - rolling runtime notes for dispatch / resume / preempt / requeue / finish transitions
+- Updated `run_live.bat` so the build step still uses MinGW, but the live runtime restores the original `PATH` before launch; this prevents the camera bridge from accidentally preferring the MinGW Python interpreter over the user Python environment.
+- Restored DESIGN.md-aligned live defaults and sequencing by:
+  - switching the live runtime default back to one-thread mode
+  - keeping resident CameraTask, MicrophoneTask, and BatchParticleExecutionTask active even in one-thread mode so functionality is reduced by scheduling, not by removing task types
+  - cancelling pending `GenerateParticleTask` / `BreezeTask` work when the camera gate closes so closed-mouth input does not leave stale blow tasks queued behind later work
+- Changed runtime notes to print to stdout immediately instead of only being surfaced after shutdown.
+- Tightened single-thread `P2` ordering to better match the intended DESIGN.md flow:
+  - `CameraTask` runs before `MicrophoneTask`
+  - `GenerateParticleTask` / `BreezeTask` run before `BatchParticleExecutionTask` once they are queued
+  - smoke tests now lock this single-thread chain in place
+- Added input-focus locking for the live sensor chain so one-thread behavior is driven more by task-internal completion conditions than by blind resident alternation:
+  - `CameraTask` now keeps single-thread `P2` focus until it internally opens the camera gate or explicitly falls back because the camera is unavailable
+  - `MicrophoneTask` then keeps single-thread `P2` focus until it internally consumes the first valid voice/fallback sample for that gate window
+  - once a microphone sample has been consumed for the current camera gate, `CameraTask` no longer re-arms microphone focus on every held-open frame
+  - tests were updated to validate the chain by waiting for real generate events instead of assuming a fixed tick index
+- Tightened particle execution fidelity against the updated DESIGN.md by:
+  - changing `BatchParticleExecutionTask` to treat its first run as the initial world tick and to decay `power` in 1000 ms chunks rather than an implicit 3-cycle particle lifetime model
+  - changing `SingleParticleTask` to move by time-based distance each RR slice instead of fixed `vx_ / vy_` steps
+  - making boundary exit the normal particle completion path for replay and live runtime testing
+  - updating unit and runtime smoke tests so they assert boundary-stop / cleaned terminal states instead of assuming the third slice always finishes a particle
 - Audited `v1` against the current runtime and confirmed the reuse strategy:
   - keep `v2` as the active branch for all DESIGN.md-aligned runtime work
   - treat `v1` SDL/OpenCV code as reference only
   - preserve the newer bridge-driven live path in `main.cpp`, `render_sdl.cpp`, and `python_mediapipe_bridge.py` instead of restoring direct old-flow camera logic
+- Reorganized `DESIGN.md` into a single canonical version focused on camera, microphone, and particle handling:
+  - removed conflicting duplicated rules in favor of one forward-only input/particle pipeline
+  - made startup device availability latching explicit
+  - clarified that if no camera is available, the runtime must start directly from `MicrophoneTask` instead of idling on `CameraTask`
+  - clarified that `CameraTask -> MicrophoneTask -> Generate/Breeze -> BatchParticleExecutionTask -> P3` is a one-way consumption chain
+  - clarified that `CameraTask` may only be reopened when `P1`, `P2`, and `P3` are all empty
+- Reworked the runtime to match that canonical chain more directly:
+  - `CameraTask` and `MicrophoneTask` are no longer treated as resident tasks
+  - a running task leaves `P1` / `P2` / `P3` when dispatched and only returns on interrupt/resume paths
+  - `ResetTask` now reseeds only one input entry task based on latched device availability instead of restoring a resident functional baseline
+  - `GenerateParticleTask` / `BreezeTask` now explicitly queue `BatchParticleExecutionTask` as the next chain stage
+  - `BatchParticleExecutionTask` now finishes when there is no remaining particle work instead of behaving like a daemon resident
+  - idle queue re-entry now follows the current DESIGN.md rule: only when `P1`, `P2`, and `P3` are all empty does the runtime reopen the input chain
+- Replaced the old resident-oriented smoke tests with chain-oriented smoke tests that verify:
+  - `CameraTask` leaves the queue while running and hands off to `MicrophoneTask`
+  - `MicrophoneTask` leaves the queue while running and hands off to `GenerateParticleTask`
+  - `GenerateParticleTask` hands off to `BatchParticleExecutionTask` plus `P3`
+  - a drained `P1/P2/P3` set reopens the input entry path on the next scheduler tick
 
 In progress
 - Stage 5: strengthen runtime behavior quality on top of the completed task graph.
@@ -178,6 +235,7 @@ Next implementation plan
 1. Strengthen MicrophoneTask classification and fallback orchestration using the local replay assets and native capture path.
 2. Finish remaining particle lifecycle rules:
    - render record cleanup polish after tasks finish
+   - better live spread/direction tuning now that time-driven motion is in place
 3. Make task ordering constraints closer to DESIGN.md:
    - CameraTask before MicrophoneTask
    - GenerateParticleTask placement rules
@@ -200,7 +258,7 @@ Next goal
   - use offline camera replay to drive mouth-open detection
   - use offline microphone replay to drive voice / breath / silence paths
   - enforce CameraTask -> MicrophoneTask -> GenerateParticleTask or BreezeTask sequencing
-  - let BatchParticleExecutionTask and SingleParticleTask carry the world forward until particles finish
+  - let BatchParticleExecutionTask and SingleParticleTask carry the world forward with time-driven motion until particles reach boundary stop and cleanup
 - Exit criteria:
   - one replayable scenario for mouth-open + breath-like input reaches BreezeTask and visible particle completion
   - one replayable scenario for mouth-open + voiced input reaches GenerateParticleTask and visible particle completion

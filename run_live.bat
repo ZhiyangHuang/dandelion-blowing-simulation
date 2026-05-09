@@ -3,6 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 set "MINGW_ROOT=C:\msys64\mingw64"
+set "ORIGINAL_PATH=%PATH%"
 set "PATH=%MINGW_ROOT%\bin;%PATH%"
 
 echo Building DandelionOS live runtime...
@@ -16,5 +17,6 @@ if errorlevel 1 (
     exit /b 1
 )
 
+set "PATH=%ORIGINAL_PATH%"
 echo Launching live runtime...
 .\dandelion_live.exe
