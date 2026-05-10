@@ -1,6 +1,7 @@
 #include "thread.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cctype>
 #include <cmath>
 #include <cstring>
@@ -20,7 +21,46 @@
 namespace {
 
 const char* kCameraBridgePath = "camera_bridge_latest.json";
+const char* kCameraControlPath = "camera_bridge_control.json";
 const char* kMicrophoneBridgePath = "microphone_bridge_latest.json";
+
+void load_camera_bridge_from_json(const std::string& payload);
+
+CameraBridgeState camera_bridge_disabled_state(const std::string& status_text) {
+    CameraBridgeState state;
+    state.bridge_connected = false;
+    state.sample_ready = false;
+    state.device_unavailable = false;
+    state.face_detected = false;
+    state.mouth_open_state = false;
+    state.looking_forward = false;
+    state.timestamp_ms = 0;
+    state.backend = "camera-bridge-disabled";
+    state.status_text = status_text;
+    return state;
+}
+
+MicrophoneBridgeState microphone_bridge_disabled_state(const std::string& backend) {
+    MicrophoneBridgeState state;
+    state.bridge_connected = false;
+    state.sample_ready = false;
+    state.device_unavailable = false;
+    state.voice_detected = false;
+    state.fallback_requested = false;
+    state.suggested_power = 0.1f;
+    state.direction_x = 0.0f;
+    state.direction_y = -1.0f;
+    state.confidence = 0.0f;
+    state.timestamp_ms = 0;
+    state.backend = backend;
+    state.status_text = backend;
+    return state;
+}
+
+void remove_file_if_exists(const std::filesystem::path& path) {
+    std::error_code ec;
+    std::filesystem::remove(path, ec);
+}
 
 std::string read_text_file_if_exists(const std::filesystem::path& path) {
     if (!std::filesystem::exists(path)) {
@@ -56,9 +96,271 @@ Fn load_winmm_symbol(HMODULE library, const char* name) {
     return fn;
 }
 
+struct ChildProcess {
+    PROCESS_INFORMATION process_info{};
+    bool running = false;
+    std::string command;
+    std::string error_text;
+};
+
+std::string narrow_ascii(const std::wstring& text) {
+    std::string output;
+    output.reserve(text.size());
+    for (wchar_t ch : text) {
+        output.push_back(ch <= 127 ? static_cast<char>(ch) : '?');
+    }
+    return output;
+}
+
+std::wstring quote_argument(const std::wstring& value) {
+    return L"\"" + value + L"\"";
+}
+
+std::wstring search_path_executable(const wchar_t* executable_name) {
+    DWORD length = SearchPathW(nullptr, executable_name, nullptr, 0, nullptr, nullptr);
+    if (length == 0) {
+        return L"";
+    }
+
+    std::wstring buffer;
+    buffer.resize(length);
+    const DWORD written = SearchPathW(
+        nullptr,
+        executable_name,
+        nullptr,
+        static_cast<DWORD>(buffer.size()),
+        buffer.data(),
+        nullptr);
+    if (written == 0) {
+        return L"";
+    }
+
+    if (!buffer.empty() && buffer.back() == L'\0') {
+        buffer.pop_back();
+    }
+    return buffer;
+}
+
+bool launch_camera_bridge_process(ChildProcess& child) {
+    struct LaunchCandidate {
+        std::wstring executable_path;
+        std::wstring command_line;
+        std::string label;
+    };
+
+    const std::filesystem::path working_directory = std::filesystem::current_path();
+    const std::filesystem::path script_path = working_directory / "python_mediapipe_bridge.py";
+
+    std::vector<LaunchCandidate> candidates;
+    const std::wstring python_exe = search_path_executable(L"python.exe");
+    if (!python_exe.empty()) {
+        candidates.push_back({
+            python_exe,
+            quote_argument(python_exe) + L" " + quote_argument(script_path.wstring()),
+            "python.exe " + narrow_ascii(python_exe),
+        });
+    }
+
+    const std::wstring py_exe = search_path_executable(L"py.exe");
+    if (!py_exe.empty()) {
+        candidates.push_back({
+            py_exe,
+            quote_argument(py_exe) + L" -3 " + quote_argument(script_path.wstring()),
+            "py.exe " + narrow_ascii(py_exe),
+        });
+    }
+
+    if (candidates.empty()) {
+        child.error_text = "No python launcher found on PATH.";
+        return false;
+    }
+
+    DWORD last_error = ERROR_FILE_NOT_FOUND;
+    std::string last_label = "none";
+    for (const LaunchCandidate& candidate : candidates) {
+        STARTUPINFOW startup_info{};
+        startup_info.cb = sizeof(startup_info);
+        PROCESS_INFORMATION process_info{};
+        std::vector<wchar_t> command_line(
+            candidate.command_line.begin(),
+            candidate.command_line.end());
+        command_line.push_back(L'\0');
+
+        const BOOL started = CreateProcessW(
+            candidate.executable_path.c_str(),
+            command_line.data(),
+            nullptr,
+            nullptr,
+            FALSE,
+            CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP,
+            nullptr,
+            working_directory.c_str(),
+            &startup_info,
+            &process_info);
+        if (!started) {
+            last_error = GetLastError();
+            last_label = candidate.label;
+            continue;
+        }
+
+        child.process_info = process_info;
+        child.running = true;
+        child.command = candidate.label;
+        child.error_text.clear();
+        return true;
+    }
+
+    child.error_text =
+        "CreateProcessW failed for " + last_label +
+        " with Win32 error " + std::to_string(static_cast<unsigned long>(last_error));
+    return false;
+}
+
+void stop_child_process(ChildProcess& child) {
+    if (!child.running) {
+        return;
+    }
+
+    TerminateProcess(child.process_info.hProcess, 0);
+    WaitForSingleObject(child.process_info.hProcess, 1000);
+    CloseHandle(child.process_info.hThread);
+    CloseHandle(child.process_info.hProcess);
+    child.process_info = PROCESS_INFORMATION{};
+    child.running = false;
+}
+
+bool child_process_alive(ChildProcess& child) {
+    if (!child.running) {
+        return false;
+    }
+
+    DWORD exit_code = 0;
+    if (!GetExitCodeProcess(child.process_info.hProcess, &exit_code)) {
+        stop_child_process(child);
+        return false;
+    }
+    if (exit_code == STILL_ACTIVE) {
+        return true;
+    }
+
+    CloseHandle(child.process_info.hThread);
+    CloseHandle(child.process_info.hProcess);
+    child.process_info = PROCESS_INFORMATION{};
+    child.running = false;
+    child.error_text =
+        "python bridge exited with code " +
+        std::to_string(static_cast<unsigned long>(exit_code));
+    return false;
+}
+
+class CameraBridgeController {
+public:
+    void start() {
+        enabled_ = true;
+        startup_started_at_ms_ = now_ms();
+        remove_file_if_exists(kCameraBridgePath);
+        write_command("run");
+        ensure_process();
+    }
+
+    void stop() {
+        enabled_ = false;
+        startup_started_at_ms_ = 0;
+        write_command("stop");
+        stop_child_process(process_);
+        remove_file_if_exists(kCameraBridgePath);
+    }
+
+    bool enabled() const {
+        return enabled_;
+    }
+
+    bool refresh(CameraBridgeState& out_state) {
+        if (!enabled_) {
+            out_state = camera_bridge_disabled_state("camera bridge disabled");
+            return true;
+        }
+
+        if (!child_process_alive(process_)) {
+            ensure_process();
+        }
+
+        const std::string payload = read_text_file_if_exists(kCameraBridgePath);
+
+        if (!payload.empty()) {
+            load_camera_bridge_from_json(payload);
+            out_state = runtime_state().camera_bridge;
+            return true;
+        }
+
+        out_state = camera_bridge_disabled_state(starting_status_text());
+        out_state.device_unavailable = startup_timed_out() && !process_.running;
+        if (out_state.device_unavailable && process_.error_text.empty()) {
+            out_state.status_text = "camera device unavailable";
+        }
+        return true;
+    }
+
+private:
+    static long long now_ms() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+                   std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    }
+
+    void ensure_process() {
+        if (process_.running) {
+            return;
+        }
+
+        if (launch_camera_bridge_process(process_)) {
+            startup_started_at_ms_ = now_ms();
+            push_runtime_note("BridgeIO: camera bridge process started with " + process_.command);
+        } else if (!process_.error_text.empty()) {
+            push_runtime_note("BridgeIO: " + process_.error_text);
+        }
+    }
+
+    bool startup_timed_out() const {
+        return startup_started_at_ms_ > 0 &&
+            (now_ms() - startup_started_at_ms_) >= 3000;
+    }
+
+    std::string starting_status_text() const {
+        if (process_.running) {
+            return startup_timed_out()
+                ? "camera bridge waiting for device"
+                : "camera bridge starting";
+        }
+        if (!process_.error_text.empty()) {
+            return process_.error_text;
+        }
+        return startup_timed_out()
+            ? "camera device unavailable"
+            : "camera bridge starting";
+    }
+
+    void write_command(const std::string& cmd) {
+        std::ofstream out(kCameraControlPath, std::ios::binary);
+        out << "{ \"command\": \"" << cmd << "\" }";
+    }
+
+    bool enabled_ = false;
+    long long startup_started_at_ms_ = 0;
+    ChildProcess process_{};
+};
+
 class NativeMicrophoneBridge {
 public:
     NativeMicrophoneBridge() = default;
+
+    void start() {
+        ensure_started();
+    }
+
+    void stop() {
+        shutdown();
+    }
 
     bool refresh(MicrophoneBridgeState& out_state) {
         if (!ensure_started()) {
@@ -83,6 +385,7 @@ public:
             out_state = last_state_;
             out_state.bridge_connected = true;
             out_state.backend = "native-cpp-wavein";
+            out_state.status_text = "microphone ready";
         }
 
         return true;
@@ -129,6 +432,8 @@ private:
         last_state_ = unavailable_state("native-cpp-wavein");
         last_state_.bridge_connected = true;
         last_state_.sample_ready = false;
+        last_state_.device_unavailable = false;
+        last_state_.status_text = "microphone ready, waiting for sample";
         return true;
     }
 
@@ -137,9 +442,11 @@ private:
         state.backend = backend;
         state.bridge_connected = false;
         state.sample_ready = false;
+        state.device_unavailable = true;
         state.voice_detected = false;
         state.fallback_requested = false;
         state.suggested_power = 0.1f;
+        state.status_text = "microphone device unavailable";
         return state;
     }
 
@@ -172,6 +479,7 @@ private:
         out_state = MicrophoneBridgeState{};
         out_state.bridge_connected = true;
         out_state.sample_ready = true;
+        out_state.device_unavailable = false;
         out_state.backend = "native-cpp-wavein";
         out_state.confidence = static_cast<float>(std::clamp(rms * 6.0, 0.0, 1.0));
         out_state.direction_x = 0.0f;
@@ -188,6 +496,10 @@ private:
         out_state.fallback_requested = breath_like;
         out_state.suggested_power =
             std::clamp(static_cast<float>(0.1 + rms * 14.0), 0.1f, 10.0f);
+        out_state.status_text = voiced
+            ? "microphone sample ready, voice detected"
+            : (breath_like ? "microphone sample ready, fallback requested"
+                           : "microphone sample ready, no voice");
 
         last_state_ = out_state;
     }
@@ -446,6 +758,7 @@ void load_camera_bridge_from_json(const std::string& payload) {
     CameraBridgeState parsed{};
     parsed.bridge_connected = parse_json_bool(payload, "bridge_connected", true);
     parsed.sample_ready = parse_json_bool(payload, "sample_ready", true);
+    parsed.device_unavailable = parse_json_bool(payload, "device_unavailable", false);
     parsed.face_detected = parse_json_bool(payload, "face_detected", false);
     parsed.mouth_open_state = parse_json_bool(payload, "mouth_open_state", false);
     parsed.looking_forward = parse_json_bool(payload, "looking_forward", false);
@@ -459,13 +772,14 @@ void load_camera_bridge_from_json(const std::string& payload) {
     parsed.status_text = parse_json_string(payload, "status_text", "camera bridge packet received");
 
     runtime_state().camera_bridge = parsed;
-    runtime_state().camera_device_available = parsed.bridge_connected;
+    runtime_state().camera_device_available = parsed.bridge_connected && !parsed.device_unavailable;
 }
 
 void load_microphone_bridge_from_json(const std::string& payload) {
     MicrophoneBridgeState parsed{};
     parsed.bridge_connected = parse_json_bool(payload, "bridge_connected", true);
     parsed.sample_ready = parse_json_bool(payload, "sample_ready", true);
+    parsed.device_unavailable = parse_json_bool(payload, "device_unavailable", false);
     parsed.voice_detected = parse_json_bool(payload, "voice_detected", false);
     parsed.fallback_requested = parse_json_bool(payload, "fallback_requested", false);
     parsed.suggested_power = std::clamp(parse_json_float(payload, "suggested_power", 0.1f), 0.1f, 10.0f);
@@ -474,17 +788,110 @@ void load_microphone_bridge_from_json(const std::string& payload) {
     parsed.confidence = std::clamp(parse_json_float(payload, "confidence", 0.0f), 0.0f, 1.0f);
     parsed.timestamp_ms = parse_json_int64(payload, "timestamp_ms", 0);
     parsed.backend = parse_json_string(payload, "backend", "microphone-json-bridge");
+    parsed.status_text = parse_json_string(payload, "status_text", "microphone bridge packet received");
 
     runtime_state().microphone_bridge = parsed;
-    runtime_state().microphone_device_available = parsed.bridge_connected;
+    runtime_state().microphone_device_available = parsed.bridge_connected && !parsed.device_unavailable;
 }
 
 }  // namespace
 
+#if defined(_WIN32)
+static CameraBridgeController g_camera;
+#endif
+static bool g_microphone_enabled = false;
+
+void start_camera_bridge() {
+    set_camera_bridge_enabled(true);
+    refresh_bridge_inputs();
+}
+
+void stop_camera_bridge() {
+    set_camera_bridge_enabled(false);
+    refresh_bridge_inputs();
+}
+
+void start_microphone_bridge() {
+    remove_file_if_exists(kMicrophoneBridgePath);
+    set_microphone_bridge_enabled(true);
+    refresh_bridge_inputs();
+}
+
+void stop_microphone_bridge() {
+    set_microphone_bridge_enabled(false);
+    refresh_bridge_inputs();
+}
+
+void set_camera_bridge_enabled(bool enabled) {
+#if defined(_WIN32)
+    if (enabled) {
+        remove_file_if_exists(kCameraBridgePath);
+        g_camera.start();
+    } else {
+        g_camera.stop();
+    }
+#else
+    (void)enabled;
+#endif
+
+    RuntimeState& state_ref = runtime_state();
+    state_ref.camera_bridge = enabled
+        ? camera_bridge_disabled_state("camera bridge starting")
+        : camera_bridge_disabled_state("camera bridge disabled");
+    state_ref.camera_device_available = false;
+    state_ref.camera_available = false;
+}
+
+void set_microphone_bridge_enabled(bool enabled) {
+    g_microphone_enabled = enabled;
+
+#if defined(_WIN32)
+    if (enabled) {
+        remove_file_if_exists(kMicrophoneBridgePath);
+        native_microphone_bridge().start();
+    } else {
+        native_microphone_bridge().stop();
+    }
+#endif
+
+    if (!enabled) {
+        RuntimeState& state_ref = runtime_state();
+        state_ref.microphone_bridge = microphone_bridge_disabled_state("microphone-bridge-disabled");
+        state_ref.microphone_device_available = false;
+        state_ref.microphone_available = false;
+    }
+}
+
+bool camera_bridge_enabled() {
+#if defined(_WIN32)
+    return g_camera.enabled();
+#else
+    return false;
+#endif
+}
+
+bool microphone_bridge_enabled() {
+    return g_microphone_enabled;
+}
+
 void refresh_bridge_inputs() {
-    const std::string camera_payload = read_text_file_if_exists(kCameraBridgePath);
-    if (!camera_payload.empty()) {
-        load_camera_bridge_from_json(camera_payload);
+    CameraBridgeState cam_state;
+#if defined(_WIN32)
+    if (g_camera.refresh(cam_state)) {
+        runtime_state().camera_bridge = cam_state;
+        runtime_state().camera_device_available =
+            cam_state.bridge_connected && !cam_state.device_unavailable;
+    }
+#else
+    runtime_state().camera_bridge = camera_bridge_disabled_state("camera bridge unsupported");
+    runtime_state().camera_device_available = false;
+#endif
+
+    if (!g_microphone_enabled) {
+        runtime_state().microphone_bridge =
+            microphone_bridge_disabled_state("microphone-bridge-disabled");
+        runtime_state().microphone_device_available = false;
+        return;
     }
 
     const std::string microphone_payload = read_text_file_if_exists(kMicrophoneBridgePath);
@@ -498,6 +905,11 @@ void refresh_bridge_inputs() {
     if (native_microphone_bridge().refresh(native_state)) {
         runtime_state().microphone_bridge = native_state;
         runtime_state().microphone_device_available = native_state.bridge_connected;
+        return;
     }
 #endif
+
+    runtime_state().microphone_bridge =
+        microphone_bridge_disabled_state("microphone-bridge-unavailable");
+    runtime_state().microphone_device_available = false;
 }

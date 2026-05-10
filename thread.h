@@ -166,6 +166,7 @@ struct SharedWorldState {
 struct CameraBridgeState {
     bool bridge_connected = false;
     bool sample_ready = false;
+    bool device_unavailable = false;
     bool face_detected = false;
     bool mouth_open_state = false;
     bool looking_forward = false;
@@ -182,6 +183,7 @@ struct CameraBridgeState {
 struct MicrophoneBridgeState {
     bool bridge_connected = false;
     bool sample_ready = false;
+    bool device_unavailable = false;
     bool voice_detected = false;
     bool fallback_requested = false;
     float suggested_power = 0.1f;
@@ -190,6 +192,7 @@ struct MicrophoneBridgeState {
     float confidence = 0.0f;
     long long timestamp_ms = 0;
     std::string backend = "microphone-bridge-unset";
+    std::string status_text = "microphone bridge idle";
 };
 
 struct RuntimeState {
@@ -405,6 +408,14 @@ void with_shared_state_write(bool lock_particle,
 void push_runtime_note(const std::string& note);
 const std::vector<std::string>& current_runtime_notes();
 std::vector<std::string> drain_runtime_notes();
+void start_camera_bridge();
+void stop_camera_bridge();
+void start_microphone_bridge();
+void stop_microphone_bridge();
+void set_camera_bridge_enabled(bool enabled);
+void set_microphone_bridge_enabled(bool enabled);
+bool camera_bridge_enabled();
+bool microphone_bridge_enabled();
 void refresh_bridge_inputs();
 
 bool init_visualization();

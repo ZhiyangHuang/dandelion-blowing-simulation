@@ -1,6 +1,5 @@
 import json
 import math
-import os
 import shutil
 import sys
 import tempfile
@@ -25,6 +24,7 @@ OUT_PATH = ROOT / "camera_bridge_latest.json"
 TMP_PATH = ROOT / "camera_bridge_latest.tmp"
 TASK_PATH = ROOT / "face_landmarker.task"
 REOPEN_DELAY_SECONDS = 1.0
+CAMERA_STARTUP_TIMEOUT_SECONDS = 3.0
 
 MOUTH_LEFT = 61
 MOUTH_RIGHT = 291
@@ -37,19 +37,15 @@ def clamp(value: float, lo: float, hi: float) -> float:
 
 
 def write_packet(packet: dict) -> None:
-    payload = json.dumps(packet)
-    last_error: Exception | None = None
-    for _ in range(8):
-        try:
-            TMP_PATH.write_text(payload, encoding="utf-8")
-            os.replace(TMP_PATH, OUT_PATH)
-            return
-        except PermissionError as exc:
-            last_error = exc
-            time.sleep(0.01)
-    if last_error is not None:
-        raise last_error
+    TMP_PATH.write_text(json.dumps(packet), encoding="utf-8")
+    TMP_PATH.replace(OUT_PATH)
 
+def check_control():
+    try:
+        data = json.loads(Path("camera_bridge_control.json").read_text())
+        return data.get("command")
+    except:
+        return None
 
 def resolve_model_path(original_path: Path) -> Path:
     if not original_path.exists():
@@ -72,6 +68,7 @@ def build_empty_packet(backend: str) -> dict:
         "backend": backend,
         "bridge_connected": False,
         "sample_ready": False,
+        "device_unavailable": False,
         "face_detected": False,
         "mouth_open_state": False,
         "mouth_open_ratio": 0.0,
@@ -210,7 +207,7 @@ class FaceLandmarkerTracker:
 
     @staticmethod
     def is_looking_forward(pitch: float, yaw: float, roll: float) -> bool:
-        return abs(yaw) < 18.0 and abs(pitch) < 20.0 and abs(roll) < 18.0
+        return abs(yaw) < 10.0 and abs(pitch) < 10.0 and abs(roll) < 15.0
 
     @staticmethod
     def blendshape_map(result) -> dict[str, float]:
@@ -274,14 +271,15 @@ class FaceLandmarkerTracker:
 
 class StableMouthBridge:
     def __init__(self) -> None:
-        self.open_threshold_ratio = 0.04
-        self.close_threshold_ratio = 0.025
-        self.open_threshold_jaw = 0.18
-        self.close_threshold_jaw = 0.08
+        self.open_threshold_ratio = 0.08
+        self.close_threshold_ratio = 0.045
+        self.open_threshold_jaw = 0.28
+        self.close_threshold_jaw = 0.12
         self.mouth_open_state = False
         self.cap = None
         self.camera_backend = "camera-not-open"
         self.last_open_attempt_ms = 0.0
+        self.camera_wait_started_at = time.time()
 
         self.detector = self._build_detector()
 
@@ -317,14 +315,29 @@ class StableMouthBridge:
             return False
 
         self.cap = cap
+        self.camera_wait_started_at = now
         return True
+
+    def camera_wait_packet(self) -> dict:
+        packet = build_empty_packet(self.camera_backend)
+        waited_seconds = max(0.0, time.time() - self.camera_wait_started_at)
+        packet["device_unavailable"] = waited_seconds >= CAMERA_STARTUP_TIMEOUT_SECONDS
+        if packet["device_unavailable"]:
+            packet["status_text"] = f"camera device unavailable via {self.camera_backend}"
+        else:
+            packet["status_text"] = f"camera starting, waiting for device via {self.camera_backend}"
+        return packet
 
     def update_hysteresis(self, packet: dict) -> None:
         ratio = float(packet.get("mouth_open_ratio", 0.0))
         jaw_open = float(packet.get("jaw_open_score", 0.0))
+        looking_forward = bool(packet.get("looking_forward", True))
 
         open_signal = ratio >= self.open_threshold_ratio or jaw_open >= self.open_threshold_jaw
         close_signal = ratio <= self.close_threshold_ratio and jaw_open <= self.close_threshold_jaw
+
+        if not looking_forward:
+            open_signal = False
 
         if not self.mouth_open_state and open_signal:
             self.mouth_open_state = True
@@ -336,9 +349,10 @@ class StableMouthBridge:
     def run(self) -> int:
         try:
             while True:
+                if check_control() == "stop":
+                    break
                 if not self.ensure_camera():
-                    packet = build_empty_packet(self.camera_backend)
-                    packet["status_text"] = f"camera unavailable via {self.camera_backend}"
+                    packet = self.camera_wait_packet()
                     write_packet(packet)
                     time.sleep(0.05)
                     continue
@@ -347,6 +361,7 @@ class StableMouthBridge:
                 if not ok or frame is None:
                     packet = build_empty_packet(self.camera_backend)
                     packet["bridge_connected"] = True
+                    packet["device_unavailable"] = False
                     packet["status_text"] = f"camera opened on {self.camera_backend}, waiting for frame"
                     write_packet(packet)
                     time.sleep(0.03)
@@ -355,11 +370,10 @@ class StableMouthBridge:
                 packet = self.detector.process(frame)
                 self.update_hysteresis(packet)
                 packet["timestamp_ms"] = int(time.time() * 1000)
+                packet["device_unavailable"] = False
                 packet["backend"] = f"{packet.get('backend', 'camera-bridge')}@{self.camera_backend}"
                 if not packet.get("face_detected", False):
                     packet["status_text"] = "camera sample ready, no face"
-                elif packet.get("mouth_open_state", False) and not packet.get("looking_forward", True):
-                    packet["status_text"] = "mouth open, not forward"
                 elif not packet.get("looking_forward", True):
                     packet["status_text"] = "face tracked, not forward"
                 elif not packet.get("mouth_open_state", False):

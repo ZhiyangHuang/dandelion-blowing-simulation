@@ -3,6 +3,8 @@ package-lock.json
 question.txt
 *.dll
 *.log
+*.o
+camera_bridge_control.json
 camera_bridge_latest.json
 camera_bridge_latest.tmp
 microphone_bridge_latest.json

@@ -1,4 +1,5 @@
 #include "thread.h"
+#include "scheduler_task_support.h"
 
 #include <algorithm>
 #include <chrono>
@@ -10,11 +11,6 @@
 #include <vector>
 
 namespace {
-
-constexpr long long kCameraGateHoldMs = 450;
-constexpr int kRrQuantumMs = 16;
-constexpr float kVelocityPerPowerPixelsPerSecond = 100.0f;
-constexpr float kNormalizedWorldPixels = 50.0f;
 
 struct StoredTask {
     std::unique_ptr<Task> task;
@@ -38,7 +34,6 @@ std::vector<RuntimeThread> g_threads;
 std::deque<StoredTask> g_p1_queue;
 std::deque<StoredTask> g_p2_queue;
 std::deque<StoredTask> g_p3_queue;
-int g_dandelion_layout_revision = 0;
 
 long long current_time_ms() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -540,23 +535,25 @@ bool p2_queue_contains_preemptive_tasks() {
         });
 }
 
-void refresh_device_availability_from_bridges() {
-    refresh_bridge_inputs();
-    RuntimeState& state_ref = runtime_state();
-    state_ref.camera_device_available = state_ref.camera_bridge.bridge_connected;
-    state_ref.microphone_device_available = state_ref.microphone_bridge.bridge_connected;
-}
-
 bool queues_all_empty() {
     return g_p1_queue.empty() && g_p2_queue.empty() && g_p3_queue.empty();
 }
 
 void queue_microphone_stage_if_needed() {
-    if (!runtime_state().microphone_device_available) {
+    if (!runtime_state().microphone_device_available && !microphone_bridge_enabled()) {
         return;
     }
     if (!has_queued_task(TaskType::MICROPHONE, PriorityLevel::P2_FUNCTIONAL)) {
         submit_task(make_microphone_task());
+    }
+}
+
+void queue_camera_stage_if_needed() {
+    if (!camera_bridge_enabled() && !runtime_state().camera_device_available) {
+        return;
+    }
+    if (!has_queued_task(TaskType::CAMERA, PriorityLevel::P2_FUNCTIONAL)) {
+        submit_task(make_camera_task());
     }
 }
 
@@ -572,9 +569,9 @@ void seed_input_entry_task_if_idle() {
     }
 
     RuntimeState& state_ref = runtime_state();
-    if (state_ref.camera_device_available) {
+    if (camera_bridge_enabled() || state_ref.camera_device_available) {
         submit_task(make_camera_task());
-    } else if (state_ref.microphone_device_available) {
+    } else if (microphone_bridge_enabled() || state_ref.microphone_device_available) {
         submit_task(make_microphone_task());
     }
 }
@@ -671,754 +668,69 @@ void reconcile_runtime_particle_bookkeeping() {
 
 }  // namespace
 
-PlaceholderTask::PlaceholderTask(TaskType task_type,
-                                 PriorityLevel task_priority,
-                                 std::string task_name,
-                                 bool resumable) {
-    type = task_type;
-    priority = task_priority;
-    name = std::move(task_name);
-    support_resume = resumable;
+namespace scheduler_task_support {
+
+long long current_time_ms() {
+    return ::current_time_ms();
 }
 
-void PlaceholderTask::execute() {
-    state = TaskState::FINISHED;
+bool camera_bridge_is_fresh(const CameraBridgeState& bridge) {
+    return ::camera_bridge_is_fresh(bridge);
 }
 
-StartTask::StartTask() {
-    type = TaskType::START;
-    priority = PriorityLevel::P1_SYSTEM;
-    name = "StartTask";
-    support_resume = false;
+bool microphone_bridge_is_fresh(const MicrophoneBridgeState& bridge) {
+    return ::microphone_bridge_is_fresh(bridge);
 }
 
-void StartTask::execute() {
-    set_runtime_phase(RuntimePhase::STARTING);
-    push_runtime_note("StartTask: runtime bootstrap started.");
-    submit_task(make_reset_task());
-    state = TaskState::FINISHED;
+bool camera_gate_is_fresh(const RuntimeState& state) {
+    return ::camera_gate_is_fresh(state);
 }
 
-ResetTask::ResetTask() {
-    type = TaskType::RESET;
-    priority = PriorityLevel::P1_SYSTEM;
-    name = "ResetTask";
-    support_resume = false;
+std::string build_input_focus_status(const RuntimeState& state) {
+    return ::build_input_focus_status(state);
 }
 
-void ResetTask::execute() {
-    set_runtime_phase(RuntimePhase::RESETTING);
-    clear_task_queue(PriorityLevel::P2_FUNCTIONAL);
-    clear_task_queue(PriorityLevel::P3_PARTICLE);
-    reset_simulation_world();
-    refresh_device_availability_from_bridges();
-    set_runtime_phase(RuntimePhase::READY);
-    seed_input_entry_task_if_idle();
-    push_runtime_note("ResetTask: world reset and input entry reseeded.");
-    state = TaskState::FINISHED;
+void erase_p2_tasks_by_type(TaskType type) {
+    ::erase_p2_tasks_by_type(type);
 }
 
-ExitTask::ExitTask() {
-    type = TaskType::EXIT_APP;
-    priority = PriorityLevel::P1_SYSTEM;
-    name = "ExitTask";
-    support_resume = false;
+void queue_microphone_stage_if_needed() {
+    ::queue_microphone_stage_if_needed();
 }
 
-void ExitTask::execute() {
-    request_shutdown();
-    set_visualization_running(false);
-    push_runtime_note("ExitTask: shutdown requested.");
-    state = TaskState::FINISHED;
+void queue_camera_stage_if_needed() {
+    ::queue_camera_stage_if_needed();
 }
 
-CameraTask::CameraTask() {
-    type = TaskType::CAMERA;
-    priority = PriorityLevel::P2_FUNCTIONAL;
-    name = "CameraTask";
-    support_resume = true;
+void queue_batch_stage_if_needed() {
+    ::queue_batch_stage_if_needed();
 }
 
-void CameraTask::execute() {
-    run_cycle(false);
+void seed_input_entry_task_if_idle() {
+    ::seed_input_entry_task_if_idle();
 }
 
-void CameraTask::resume() {
-    run_cycle(true);
+int current_scheduler_frame_index() {
+    return g_frame_index;
 }
 
-void CameraTask::run_cycle(bool resumed) {
-    ++cycle_count_;
-    bool should_cancel_pending_blow_tasks = false;
-    bool should_queue_microphone = false;
-    bool stage_finished = false;
-    with_shared_state_write(false, false, true, [this, resumed, &should_cancel_pending_blow_tasks, &should_queue_microphone, &stage_finished]() {
-        RuntimeState& state_ref = runtime_state();
-        RenderData& data = render_data();
-        const CameraBridgeState& bridge = state_ref.camera_bridge;
-        const bool bridge_fresh = camera_bridge_is_fresh(bridge);
-        const bool device_available = state_ref.camera_device_available;
-
-        state_ref.camera_available =
-            device_available &&
-            bridge.bridge_connected &&
-            bridge.sample_ready &&
-            bridge_fresh &&
-            bridge.face_detected;
-        if (state_ref.camera_available) {
-            state_ref.world.mouth_x = std::clamp(bridge.mouth_center_x, 0.0f, 1.0f);
-            state_ref.world.mouth_y = std::clamp(bridge.mouth_center_y, 0.0f, 1.0f);
-        } else {
-            state_ref.world.mouth_x = state_ref.world.dandelion_x;
-            state_ref.world.mouth_y = state_ref.world.dandelion_y;
-        }
-
-        data.camera_layer.enabled = current_runtime_state().phase == RuntimePhase::READY;
-        data.camera_layer.mouth_detected =
-            state_ref.camera_available &&
-            bridge.mouth_open_state &&
-            bridge.looking_forward;
-        if (!device_available) {
-            state_ref.camera_gate_open = false;
-            state_ref.camera_gate_frame = -1;
-            state_ref.camera_gate_until_ms = 0;
-            state_ref.camera_focus_locked = false;
-            state_ref.microphone_focus_locked = state_ref.microphone_device_available;
-            state_ref.microphone_focus_until_ms =
-                state_ref.microphone_device_available ? current_time_ms() + kCameraGateHoldMs : 0;
-            state_ref.microphone_focus_consumed_for_gate = false;
-            data.camera_layer.status = "camera-device-unavailable";
-            data.ui.camera_task_status = "CAM unavailable, handoff";
-            should_queue_microphone = state_ref.microphone_device_available;
-            stage_finished = true;
-        } else if (data.camera_layer.mouth_detected) {
-            state_ref.camera_gate_open = true;
-            state_ref.camera_gate_frame = g_frame_index;
-            state_ref.camera_gate_until_ms = current_time_ms() + kCameraGateHoldMs;
-            state_ref.microphone_focus_consumed_for_gate = false;
-            state_ref.camera_focus_locked = false;
-            state_ref.microphone_focus_locked = true;
-            state_ref.microphone_focus_until_ms = current_time_ms() + kCameraGateHoldMs;
-            should_queue_microphone = state_ref.microphone_device_available;
-            stage_finished = true;
-        } else if (state_ref.camera_gate_until_ms > 0 &&
-                   current_time_ms() <= state_ref.camera_gate_until_ms &&
-                   bridge.bridge_connected &&
-                   bridge.sample_ready &&
-                   bridge_fresh &&
-                   bridge.face_detected) {
-            state_ref.camera_gate_open = true;
-            state_ref.camera_focus_locked = false;
-            if (!state_ref.microphone_focus_consumed_for_gate) {
-                state_ref.microphone_focus_locked = true;
-                state_ref.microphone_focus_until_ms =
-                    std::max(state_ref.microphone_focus_until_ms, current_time_ms() + kCameraGateHoldMs);
-            }
-        } else {
-            state_ref.camera_gate_open = false;
-            state_ref.camera_gate_frame = -1;
-            state_ref.camera_gate_until_ms = 0;
-            state_ref.camera_focus_locked = true;
-            state_ref.microphone_focus_locked = false;
-            state_ref.microphone_focus_until_ms = 0;
-            state_ref.microphone_focus_consumed_for_gate = false;
-        }
-        should_cancel_pending_blow_tasks = !state_ref.camera_gate_open;
-        data.camera_layer.mouth_x = state_ref.world.mouth_x;
-        data.camera_layer.mouth_y = state_ref.world.mouth_y;
-        data.camera_layer.update_tick = cycle_count_;
-        if (!device_available) {
-            data.camera_layer.status = "camera-device-unavailable";
-            data.ui.camera_task_status = "CAM unavailable, handoff";
-        } else if (!bridge.bridge_connected) {
-            data.camera_layer.status = "camera-bridge-disconnected";
-            data.ui.camera_task_status = bridge.status_text.empty()
-                ? "CAM bridge disconnected"
-                : "CAM " + bridge.status_text;
-            state_ref.camera_focus_locked = false;
-            state_ref.microphone_focus_locked = true;
-            state_ref.microphone_focus_until_ms = current_time_ms() + kCameraGateHoldMs;
-            state_ref.microphone_focus_consumed_for_gate = false;
-        } else if (!bridge.sample_ready) {
-            data.camera_layer.status = "camera-bridge-waiting";
-            data.ui.camera_task_status = bridge.status_text.empty()
-                ? "CAM waiting for bridge sample"
-                : "CAM " + bridge.status_text;
-            state_ref.camera_focus_locked = true;
-            state_ref.microphone_focus_locked = false;
-            state_ref.microphone_focus_consumed_for_gate = false;
-        } else if (!bridge_fresh) {
-            data.camera_layer.status = "camera-bridge-stale";
-            data.ui.camera_task_status = "CAM bridge sample stale";
-        } else if (!bridge.face_detected) {
-            data.camera_layer.status = "camera-bridge-no-face";
-            data.ui.camera_task_status = bridge.status_text.empty()
-                ? "CAM sample ready, no face"
-                : "CAM " + bridge.status_text;
-            state_ref.camera_focus_locked = true;
-            state_ref.microphone_focus_locked = false;
-            state_ref.microphone_focus_consumed_for_gate = false;
-        } else if (!bridge.mouth_open_state || !bridge.looking_forward) {
-            data.camera_layer.status = "camera-bridge-face-idle";
-            data.ui.camera_task_status = bridge.status_text.empty()
-                ? "CAM face tracked, mouth idle"
-                : "CAM " + bridge.status_text;
-        } else {
-            data.camera_layer.status = resumed ? "camera-bridge-resume" : "camera-bridge-active";
-            data.ui.camera_task_status =
-                "CAM bridge active " + bridge.backend +
-                " conf " + std::to_string(static_cast<int>(bridge.confidence * 100.0f));
-        }
-        data.ui.input_focus_status = build_input_focus_status(state_ref);
-    });
-
-    if (should_queue_microphone) {
-        queue_microphone_stage_if_needed();
-    }
-
-    if (should_cancel_pending_blow_tasks) {
-        const bool had_generate =
-            has_queued_task(TaskType::GENERATE_PARTICLE, PriorityLevel::P2_FUNCTIONAL);
-        const bool had_breeze =
-            has_queued_task(TaskType::BREEZE, PriorityLevel::P2_FUNCTIONAL);
-        erase_p2_tasks_by_type(TaskType::GENERATE_PARTICLE);
-        erase_p2_tasks_by_type(TaskType::BREEZE);
-        if (had_generate || had_breeze) {
-            push_runtime_note("CameraTask: mouth closed, cancelled pending blow tasks.");
-        }
-    }
-
-    if (stage_finished) {
-        push_runtime_note("CameraTask: stage completed.");
-    }
-
-    state = stage_finished ? TaskState::FINISHED : TaskState::RUNNING;
+void rebuild_particle_ring_for_world(float center_x, float center_y, int count) {
+    ::rebuild_particle_ring_for_world(center_x, center_y, count);
 }
 
-MicrophoneTask::MicrophoneTask() {
-    type = TaskType::MICROPHONE;
-    priority = PriorityLevel::P2_FUNCTIONAL;
-    name = "MicrophoneTask";
-    support_resume = true;
+std::vector<int> collect_spawnable_particle_slots(int limit) {
+    return ::collect_spawnable_particle_slots(limit);
 }
 
-void MicrophoneTask::execute() {
-    run_cycle(false);
+void reconcile_particle_bookkeeping(RuntimeState& state_ref, RenderData& data) {
+    ::reconcile_particle_bookkeeping(state_ref, data);
 }
 
-void MicrophoneTask::resume() {
-    run_cycle(true);
+void reconcile_runtime_particle_bookkeeping() {
+    ::reconcile_runtime_particle_bookkeeping();
 }
 
-void MicrophoneTask::run_cycle(bool resumed) {
-    ++sample_count_;
-    bool should_queue_generate = false;
-    bool should_queue_breeze = false;
-    bool stage_finished = false;
-    with_shared_state_write(false, true, true, [this, resumed, &should_queue_generate, &should_queue_breeze, &stage_finished]() {
-        RuntimeState& state_ref = runtime_state();
-        RenderData& data = render_data();
-        const MicrophoneBridgeState& bridge = state_ref.microphone_bridge;
-        const bool camera_gate_ready = camera_gate_is_fresh(state_ref);
-        const bool microphone_focus_ready =
-            state_ref.microphone_focus_locked &&
-            state_ref.microphone_focus_until_ms > 0 &&
-            current_time_ms() <= state_ref.microphone_focus_until_ms;
-        const bool input_window_ready =
-            !state_ref.camera_device_available || camera_gate_ready || microphone_focus_ready;
-        const bool bridge_fresh = microphone_bridge_is_fresh(bridge);
-        const bool sample_already_consumed =
-            bridge.timestamp_ms > 0 &&
-            bridge.timestamp_ms == state_ref.last_consumed_microphone_sample_ms;
-
-        state_ref.microphone_available =
-            state_ref.microphone_device_available &&
-            input_window_ready &&
-            bridge.bridge_connected &&
-            bridge.sample_ready &&
-            bridge_fresh &&
-            bridge.voice_detected;
-        state_ref.world.power = input_window_ready
-            ? (bridge_fresh ? std::clamp(bridge.suggested_power, 0.1f, 10.0f) : 0.1f)
-            : 0.1f;
-
-        data.wind_layer.active = state_ref.microphone_available;
-        data.wind_layer.power = state_ref.world.power;
-        data.wind_layer.sample_tick = sample_count_;
-        if (!state_ref.microphone_device_available) {
-            data.wind_layer.status = "mic-device-unavailable";
-            data.ui.microphone_task_status = "MIC unavailable";
-            stage_finished = true;
-        } else if (!input_window_ready) {
-            data.wind_layer.status = "mic-waiting-for-camera";
-            data.ui.microphone_task_status = "MIC waiting for camera gate";
-        } else if (!bridge.bridge_connected) {
-            data.wind_layer.status = "mic-bridge-disconnected";
-            data.ui.microphone_task_status = "MIC bridge disconnected";
-        } else if (!bridge.sample_ready) {
-            data.wind_layer.status = "mic-bridge-waiting";
-            data.ui.microphone_task_status = "MIC waiting for bridge sample";
-        } else if (!bridge_fresh) {
-            data.wind_layer.status = "mic-bridge-stale";
-            data.ui.microphone_task_status = "MIC bridge sample stale";
-        } else if (bridge.fallback_requested) {
-            data.wind_layer.status = "mic-bridge-fallback";
-            data.ui.microphone_task_status = "MIC requested breeze fallback";
-        } else if (!bridge.voice_detected) {
-            data.wind_layer.status = "mic-bridge-silent";
-            data.ui.microphone_task_status = "MIC sample ready, no voice";
-        } else {
-            data.wind_layer.status = resumed ? "mic-bridge-resume" : "mic-bridge-active";
-            data.ui.microphone_task_status =
-                "MIC bridge active " + bridge.backend +
-                " power " + std::to_string(static_cast<int>(state_ref.world.power * 100.0f) / 100.0f);
-        }
-        data.ui.power = state_ref.world.power;
-
-        should_queue_breeze =
-            input_window_ready &&
-            bridge.bridge_connected &&
-            bridge.sample_ready &&
-            bridge_fresh &&
-            bridge.fallback_requested &&
-            !sample_already_consumed &&
-            !has_queued_task(TaskType::BREEZE, PriorityLevel::P2_FUNCTIONAL);
-        should_queue_generate =
-            input_window_ready &&
-            state_ref.microphone_available &&
-            !bridge.fallback_requested &&
-            !sample_already_consumed &&
-            !has_queued_task(TaskType::GENERATE_PARTICLE, PriorityLevel::P2_FUNCTIONAL);
-
-        if ((should_queue_generate || should_queue_breeze) && bridge.timestamp_ms > 0) {
-            state_ref.last_consumed_microphone_sample_ms = bridge.timestamp_ms;
-            state_ref.microphone_focus_locked = false;
-            state_ref.microphone_focus_until_ms = 0;
-            state_ref.microphone_focus_consumed_for_gate = true;
-            state_ref.camera_focus_locked = false;
-            state_ref.camera_gate_open = false;
-            state_ref.camera_gate_frame = -1;
-            state_ref.camera_gate_until_ms = 0;
-            stage_finished = true;
-        } else if (microphone_focus_ready) {
-            state_ref.camera_focus_locked = false;
-            state_ref.microphone_focus_locked = true;
-        } else if (!input_window_ready) {
-            state_ref.microphone_focus_locked = false;
-            state_ref.microphone_focus_until_ms = 0;
-            state_ref.microphone_focus_consumed_for_gate = false;
-            state_ref.camera_focus_locked = true;
-        } else {
-            state_ref.camera_focus_locked = false;
-            state_ref.microphone_focus_locked = true;
-            state_ref.microphone_focus_until_ms = current_time_ms() + kCameraGateHoldMs;
-        }
-        data.ui.input_focus_status = build_input_focus_status(state_ref);
-    });
-
-    if (should_queue_generate) {
-        submit_task(make_generate_particle_task());
-    }
-    if (should_queue_breeze) {
-        submit_task(make_breeze_task());
-    }
-
-    if (stage_finished) {
-        push_runtime_note("MicrophoneTask: stage completed.");
-    }
-
-    state = stage_finished ? TaskState::FINISHED : TaskState::RUNNING;
-}
-
-GenerateParticleTask::GenerateParticleTask() {
-    type = TaskType::GENERATE_PARTICLE;
-    priority = PriorityLevel::P2_FUNCTIONAL;
-    name = "GenerateParticleTask";
-    support_resume = false;
-}
-
-int GenerateParticleTask::compute_spawn_count(float power) const {
-    if (power < 0.20f) {
-        return 1;
-    }
-    if (power < 0.30f) {
-        return 2;
-    }
-    if (power < 0.40f) {
-        return 3;
-    }
-    return 4;
-}
-
-void GenerateParticleTask::execute() {
-    int created = 0;
-    with_shared_state_write(true, true, true, [this, &created]() {
-        RuntimeState& state_ref = runtime_state();
-        RenderData& data = render_data();
-
-        const int spawn_target = compute_spawn_count(state_ref.world.power);
-        const std::vector<int> spawn_slots = collect_spawnable_particle_slots(
-            std::min(spawn_target, state_ref.world.remaining_particles));
-
-        for (int index = 0; index < static_cast<int>(spawn_slots.size()); ++index) {
-            const int slot = spawn_slots[static_cast<std::size_t>(index)];
-            ParticleRenderData& particle = data.particles[static_cast<std::size_t>(slot)];
-            particle.ownership_token++;
-            submit_task(make_single_particle_task(slot, index + 1, particle.ownership_token));
-            particle.active = true;
-            particle.attached = false;
-            particle.status = "queued";
-            created++;
-        }
-
-        reconcile_particle_bookkeeping(state_ref, data);
-        data.ui.generate_task_status =
-            "GENERATE created " + std::to_string(created) + " particle tasks";
-        data.ui.particle_task_status =
-            created > 0 ? "P3 queue populated" : "P3 queue unchanged";
-    });
-
-    if (created > 0) {
-        queue_batch_stage_if_needed();
-    }
-    push_runtime_note(
-        "GenerateParticleTask: queued " + std::to_string(created) + " particle task records.");
-    state = TaskState::FINISHED;
-}
-
-BreezeTask::BreezeTask() {
-    type = TaskType::BREEZE;
-    priority = PriorityLevel::P2_FUNCTIONAL;
-    name = "BreezeTask";
-    support_resume = false;
-}
-
-void BreezeTask::execute() {
-    bool created_particle = false;
-    with_shared_state_write(true, true, true, [&created_particle]() {
-        RuntimeState& state_ref = runtime_state();
-        RenderData& data = render_data();
-
-        state_ref.world.power = 5.0f;
-        data.wind_layer.active = true;
-        data.wind_layer.power = state_ref.world.power;
-        data.wind_layer.status = "breeze-fallback";
-        data.ui.power = state_ref.world.power;
-
-        const std::vector<int> spawn_slots = collect_spawnable_particle_slots(1);
-        if (state_ref.world.remaining_particles > 0 &&
-            !spawn_slots.empty() &&
-            !has_queued_task(TaskType::SINGLE_PARTICLE, PriorityLevel::P3_PARTICLE)) {
-            const int slot = spawn_slots.front();
-            ParticleRenderData& particle = data.particles[static_cast<std::size_t>(slot)];
-            particle.ownership_token++;
-            submit_task(make_single_particle_task(slot, 1, particle.ownership_token));
-            particle.active = true;
-            particle.attached = false;
-            particle.status = "breeze-queued";
-            reconcile_particle_bookkeeping(state_ref, data);
-            data.ui.particle_task_status = "BREEZE queued fallback particle";
-            created_particle = true;
-        } else {
-            reconcile_particle_bookkeeping(state_ref, data);
-            data.ui.particle_task_status = "BREEZE had no particle slot";
-        }
-
-        data.ui.generate_task_status =
-            created_particle ? "BREEZE fallback created 1 particle task"
-                             : "BREEZE fallback created 0 particle tasks";
-    });
-
-    if (created_particle) {
-        queue_batch_stage_if_needed();
-    }
-    push_runtime_note(created_particle
-        ? "BreezeTask: fallback wind queued one particle task."
-        : "BreezeTask: fallback wind ran without queuing a particle.");
-    state = TaskState::FINISHED;
-}
-
-ChangeDandelionTask::ChangeDandelionTask() {
-    type = TaskType::CHANGE_DANDELION;
-    priority = PriorityLevel::P2_FUNCTIONAL;
-    name = "ChangeDandelionTask";
-    support_resume = false;
-}
-
-void ChangeDandelionTask::execute() {
-    ++g_dandelion_layout_revision;
-    const int revision = g_dandelion_layout_revision % 3;
-
-    with_shared_state_write(true, true, true, [revision]() {
-        RuntimeState& state_ref = runtime_state();
-        RenderData& data = render_data();
-
-        float next_x = 0.5f;
-        float next_y = 0.5f;
-        if (revision == 1) {
-            next_x = 0.42f;
-            next_y = 0.52f;
-        } else if (revision == 2) {
-            next_x = 0.58f;
-            next_y = 0.48f;
-        }
-
-        state_ref.world.dandelion_x = next_x;
-        state_ref.world.dandelion_y = next_y;
-        state_ref.world.mouth_x = next_x;
-        state_ref.world.mouth_y = next_y;
-        state_ref.world.remaining_particles = 100;
-        state_ref.world.queued_particle_tasks = 0;
-        state_ref.world.power = 0.1f;
-
-        data.camera_layer.mouth_x = next_x;
-        data.camera_layer.mouth_y = next_y;
-        data.wind_layer.active = false;
-        data.wind_layer.power = state_ref.world.power;
-        data.wind_layer.status = "idle";
-        data.ui.power = state_ref.world.power;
-        data.ui.generate_task_status = "CHANGE rebuilt dandelion";
-        data.ui.particle_task_status = "CHANGE reset particle ring";
-
-        rebuild_particle_ring_for_world(next_x, next_y, 100);
-        reconcile_particle_bookkeeping(state_ref, data);
-    });
-
-    clear_task_queue(PriorityLevel::P3_PARTICLE);
-    push_runtime_note("ChangeDandelionTask: rebuilt dandelion cluster and reset particle state.");
-    state = TaskState::FINISHED;
-}
-
-BatchParticleExecutionTask::BatchParticleExecutionTask() {
-    type = TaskType::BATCH_PARTICLE_EXECUTION;
-    priority = PriorityLevel::P2_FUNCTIONAL;
-    name = "BatchParticleExecutionTask";
-    support_resume = true;
-}
-
-void BatchParticleExecutionTask::execute() {
-    run_cycle(false);
-}
-
-void BatchParticleExecutionTask::resume() {
-    run_cycle(true);
-}
-
-void BatchParticleExecutionTask::run_cycle(bool resumed) {
-    ++tick_count_;
-    if (!started_) {
-        started_ = true;
-    }
-    decay_accumulator_ms_ += kRrQuantumMs;
-    bool stage_finished = false;
-    with_shared_state_write(true, true, true, [this, resumed, &stage_finished]() {
-        RuntimeState& state_ref = runtime_state();
-        RenderData& data = render_data();
-        bool power_decayed = false;
-        int cleaned_particles = 0;
-
-        if (decay_accumulator_ms_ >= 1000 && state_ref.world.power > 0.1f) {
-            state_ref.world.power = std::max(0.1f, state_ref.world.power - 0.01f);
-            decay_accumulator_ms_ -= 1000;
-            power_decayed = true;
-        }
-
-        for (ParticleRenderData& particle : data.particles) {
-            const bool finished_detached =
-                !particle.active &&
-                !particle.attached &&
-                particle.source_task_id == -1 &&
-                (particle.status == "particle-finished" ||
-                 particle.status == "particle-boundary-stop");
-            if (!finished_detached) {
-                continue;
-            }
-
-            particle.x = -1.0f;
-            particle.y = -1.0f;
-            particle.status = "particle-cleaned";
-            cleaned_particles++;
-        }
-
-        reconcile_particle_bookkeeping(state_ref, data);
-
-        const bool has_cleanup_pending = std::any_of(
-            data.particles.begin(),
-            data.particles.end(),
-            [](const ParticleRenderData& particle) {
-                return !particle.active &&
-                    !particle.attached &&
-                    particle.source_task_id == -1 &&
-                    (particle.status == "particle-finished" ||
-                     particle.status == "particle-boundary-stop");
-            });
-        const bool has_active_particle_motion = std::any_of(
-            data.particles.begin(),
-            data.particles.end(),
-            [](const ParticleRenderData& particle) {
-                return !particle.attached && particle.active;
-            });
-        stage_finished =
-            !has_cleanup_pending &&
-            !has_active_particle_motion &&
-            state_ref.world.queued_particle_tasks == 0;
-
-        data.wind_layer.active = false;
-        data.wind_layer.power = state_ref.world.power;
-        data.wind_layer.tick_count = tick_count_;
-        if (cleaned_particles > 0) {
-            data.wind_layer.status = "world-tick-cleanup";
-        } else if (power_decayed) {
-            data.wind_layer.status = "world-tick-decay";
-        } else if (tick_count_ == 1) {
-            data.wind_layer.status = "world-tick-start";
-        } else {
-            data.wind_layer.status = resumed ? "batch-resume" : "batch-execute";
-        }
-        data.ui.power = state_ref.world.power;
-        if (cleaned_particles > 0) {
-            data.ui.batch_task_status =
-                "BATCH cleaned " + std::to_string(cleaned_particles) + " particle render records";
-        } else if (power_decayed) {
-            data.ui.batch_task_status =
-                "BATCH decayed power to " +
-                std::to_string(static_cast<int>(state_ref.world.power * 100.0f) / 100.0f);
-        } else if (tick_count_ == 1) {
-            data.ui.batch_task_status = "BATCH recorded initial world tick";
-        } else if (stage_finished) {
-            data.ui.batch_task_status = "BATCH finished world pass";
-        } else {
-            data.ui.batch_task_status = "BATCH tick " + std::to_string(tick_count_);
-        }
-    });
-
-    if (stage_finished) {
-        push_runtime_note("BatchParticleExecutionTask: stage completed.");
-    }
-
-    state = stage_finished ? TaskState::FINISHED : TaskState::RUNNING;
-}
-
-SingleParticleTask::SingleParticleTask(int particle_slot,
-                                       int generation_index,
-                                       int ownership_token)
-    : particle_slot_(particle_slot),
-      generation_index_(generation_index),
-      ownership_token_(ownership_token) {
-    type = TaskType::SINGLE_PARTICLE;
-    priority = PriorityLevel::P3_PARTICLE;
-    name = "SingleParticleTask";
-    support_resume = true;
-}
-
-void SingleParticleTask::execute() {
-    run_cycle(false);
-}
-
-void SingleParticleTask::resume() {
-    run_cycle(true);
-}
-
-void SingleParticleTask::run_cycle(bool resumed) {
-    ++cycle_count_;
-    completed_ = false;
-    with_shared_state_write(true, false, true, [this, resumed]() {
-        RuntimeState& state_ref = runtime_state();
-        RenderData& data = render_data();
-
-        if (particle_slot_ >= 0 &&
-            particle_slot_ < static_cast<int>(data.particles.size())) {
-            ParticleRenderData& particle = data.particles[particle_slot_];
-            if (particle.ownership_token != ownership_token_) {
-                completed_ = true;
-                reconcile_particle_bookkeeping(state_ref, data);
-                data.ui.particle_task_status =
-                    "P3 task " + std::to_string(id) + " lost slot ownership";
-                return;
-            }
-            if (!initialized_) {
-                x_ = particle.x;
-                y_ = particle.y;
-                const float from_center_x = x_ - state_ref.world.dandelion_x;
-                const float from_center_y = y_ - state_ref.world.dandelion_y;
-                const float from_mouth_x = x_ - state_ref.world.mouth_x;
-                const float from_mouth_y = y_ - state_ref.world.mouth_y;
-                float base_x = from_center_x;
-                float base_y = from_center_y;
-                if (std::abs(base_x) + std::abs(base_y) < 0.001f) {
-                    base_x = from_mouth_x;
-                    base_y = from_mouth_y;
-                }
-                if (std::abs(base_x) + std::abs(base_y) < 0.001f) {
-                    base_x = 1.0f;
-                    base_y = 0.0f;
-                }
-
-                float length = std::sqrt(base_x * base_x + base_y * base_y);
-                if (length <= 0.0001f) {
-                    length = 1.0f;
-                }
-                base_x /= length;
-                base_y /= length;
-
-                const float spread = (static_cast<float>(generation_index_) - 2.0f) * 0.18f;
-                dir_x_ = base_x + (-base_y * spread);
-                dir_y_ = base_y + (base_x * spread);
-
-                float dir_length = std::sqrt(dir_x_ * dir_x_ + dir_y_ * dir_y_);
-                if (dir_length <= 0.0001f) {
-                    dir_x_ = base_x;
-                    dir_y_ = base_y;
-                    dir_length = 1.0f;
-                }
-                dir_x_ /= dir_length;
-                dir_y_ /= dir_length;
-
-                const float velocity_pixels_per_second =
-                    std::clamp(state_ref.world.power, 0.1f, 10.0f) *
-                    kVelocityPerPowerPixelsPerSecond;
-                distance_per_tick_ =
-                    velocity_pixels_per_second *
-                    (static_cast<float>(kRrQuantumMs) / 1000.0f) /
-                    kNormalizedWorldPixels;
-                initialized_ = true;
-            }
-
-            x_ += dir_x_ * distance_per_tick_;
-            y_ += dir_y_ * distance_per_tick_;
-            particle.source_task_id = id;
-            particle.x = x_;
-            particle.y = y_;
-            particle.active = true;
-            particle.status = resumed ? "particle-resume" : "particle-execute";
-
-            const bool boundary_stop =
-                x_ < 0.0f || x_ > 1.0f || y_ < 0.0f || y_ > 1.0f;
-
-            if (boundary_stop) {
-                completed_ = true;
-                particle.active = false;
-                particle.attached = false;
-                particle.source_task_id = -1;
-                particle.status = "particle-boundary-stop";
-                reconcile_particle_bookkeeping(state_ref, data);
-                data.ui.particle_task_status =
-                    "P3 task " + std::to_string(id) + " boundary stop cleanup";
-            } else {
-                reconcile_particle_bookkeeping(state_ref, data);
-                data.ui.particle_task_status =
-                    "P3 task " + std::to_string(id) +
-                    " step " + std::to_string(cycle_count_);
-            }
-        } else {
-            reconcile_particle_bookkeeping(state_ref, data);
-            data.ui.particle_task_status =
-                "P3 task " + std::to_string(id) + " lost particle slot";
-        }
-    });
-
-    state = completed_ ? TaskState::FINISHED : TaskState::RUNNING;
-}
+}  // namespace scheduler_task_support
 
 void bootstrap_runtime() {
     g_next_task_id = 1;
@@ -1461,58 +773,6 @@ int submit_task(std::unique_ptr<Task> task) {
     mark_task_created(*task);
     enqueue_with_policy(std::move(task));
     return g_next_task_id - 1;
-}
-
-std::unique_ptr<Task> make_placeholder_task(TaskType type,
-                                            PriorityLevel priority,
-                                            const std::string& name,
-                                            bool support_resume) {
-    return std::make_unique<PlaceholderTask>(type, priority, name, support_resume);
-}
-
-std::unique_ptr<Task> make_start_task() {
-    return std::make_unique<StartTask>();
-}
-
-std::unique_ptr<Task> make_reset_task() {
-    return std::make_unique<ResetTask>();
-}
-
-std::unique_ptr<Task> make_exit_task() {
-    return std::make_unique<ExitTask>();
-}
-
-std::unique_ptr<Task> make_camera_task() {
-    return std::make_unique<CameraTask>();
-}
-
-std::unique_ptr<Task> make_microphone_task() {
-    return std::make_unique<MicrophoneTask>();
-}
-
-std::unique_ptr<Task> make_generate_particle_task() {
-    return std::make_unique<GenerateParticleTask>();
-}
-
-std::unique_ptr<Task> make_breeze_task() {
-    return std::make_unique<BreezeTask>();
-}
-
-std::unique_ptr<Task> make_change_dandelion_task() {
-    return std::make_unique<ChangeDandelionTask>();
-}
-
-std::unique_ptr<Task> make_batch_particle_execution_task() {
-    return std::make_unique<BatchParticleExecutionTask>();
-}
-
-std::unique_ptr<Task> make_single_particle_task(int particle_slot,
-                                                int generation_index,
-                                                int ownership_token) {
-    return std::make_unique<SingleParticleTask>(
-        particle_slot,
-        generation_index,
-        ownership_token);
 }
 
 void set_thread_mode(int mode) {

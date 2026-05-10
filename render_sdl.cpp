@@ -1,13 +1,11 @@
 #include "thread.h"
-
+#include <SDL.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cctype>
 #include <string>
 #include <vector>
-
-#include <SDL.h>
 
 namespace {
 
@@ -323,7 +321,7 @@ void rebuild_buttons() {
     const int button_gap = 10;
     const int button_width = (panel_width - padding * 2 - button_gap) / 2;
     const int button_height = 42;
-    int row_y = g_window_height - 4 * (button_height + 8) - 24;
+    int row_y = g_window_height - 4 * (button_height + 8);
 
     auto push_button = [&](int col,
                            const std::string& label,
@@ -452,8 +450,13 @@ void render_dandelion_world(const RuntimeState& state, const RenderData& data) {
         const int particle_y = scale_world_y(particle.y);
         const int radius = particle.attached ? 4 : 5;
         fill_circle(particle_x, particle_y, radius, particle_color(particle));
-        if (!particle.attached && particle.active) {
-            draw_line(particle_x - 4, particle_y + 3, particle_x + 5, particle_y + 3, SDL_Color{255, 255, 255, 96});
+        if (particle.attached) {
+            draw_line(particle_x, particle_y, center_x, center_y, SDL_Color{255, 255, 255, 96});
+        }
+        if (particle.active) {
+            for (int i = -3; i <= 3; ++i) {
+                draw_line(particle_x, particle_y, particle_x + 15, particle_y - 12 + i * 4, particle_color(particle));
+            }
         }
     }
 
@@ -464,7 +467,6 @@ void render_dandelion_world(const RuntimeState& state, const RenderData& data) {
         const int mouth_x = scale_world_x(data.camera_layer.mouth_x);
         const int mouth_y = scale_world_y(data.camera_layer.mouth_y);
         const SDL_Color mouth_color = state.camera_bridge.mouth_open_state ? kMouthOpen : kMouthClosed;
-        draw_line(mouth_x, mouth_y, center_x, center_y, SDL_Color{255, 255, 255, 100});
         fill_circle(mouth_x, mouth_y, state.camera_bridge.mouth_open_state ? 12 : 8, mouth_color);
     }
 
@@ -569,28 +571,28 @@ void render_status_panel(const RuntimeState& state,
             kMutedTextColor);
         y += 74;
     }
-
-    draw_text(panel_x + padding, y, "PARTICLES", kTextColor);
+    y -=280;
+    draw_text(padding, y, "PARTICLES", kTextColor);
     y += 20;
-    draw_text(panel_x + padding, y, "REMAIN " + std::to_string(data.ui.remaining_particles), kMutedTextColor);
+    draw_text(padding, y, "REMAIN " + std::to_string(data.ui.remaining_particles), kMutedTextColor);
     y += 18;
-    draw_text(panel_x + padding, y, "QUEUED " + std::to_string(data.ui.queued_particle_tasks), kMutedTextColor);
+    draw_text(padding, y, "QUEUED " + std::to_string(data.ui.queued_particle_tasks), kMutedTextColor);
     y += 18;
-    const SDL_Rect remain_bar = make_rect(panel_x + padding, y, panel_w - padding * 2, 16);
+    const SDL_Rect remain_bar = make_rect(padding, y, panel_w - padding * 2, 16);
     fill_rect(remain_bar, SDL_Color{45, 55, 67, 255});
     const int total_particles = std::max(1, static_cast<int>(data.particles.size()));
     fill_rect(
         make_rect(remain_bar.x, remain_bar.y, remain_bar.w * data.ui.remaining_particles / total_particles, remain_bar.h),
         kParticleAttached);
     y += 24;
-    const SDL_Rect queued_bar = make_rect(panel_x + padding, y, panel_w - padding * 2, 16);
+    const SDL_Rect queued_bar = make_rect(padding, y, panel_w - padding * 2, 16);
     fill_rect(queued_bar, SDL_Color{45, 55, 67, 255});
     fill_rect(
         make_rect(queued_bar.x, queued_bar.y, std::min(queued_bar.w, data.ui.queued_particle_tasks * 18), queued_bar.h),
         kParticleFlying);
     y += 32;
 
-    draw_text(panel_x + padding, y, "TASK STATUS", kTextColor);
+    draw_text(padding, y, "TASK STATUS", kTextColor);
     y += 20;
     const int task_line_width = std::max(0, (panel_w - padding * 2) / (kGlyphAdvance * kFontScale));
     auto crop_line = [task_line_width](const std::string& text) {
@@ -602,27 +604,27 @@ void render_status_panel(const RuntimeState& state,
         }
         return text.substr(0, static_cast<std::size_t>(task_line_width - 3)) + "...";
     };
-    draw_text(panel_x + padding, y, crop_line("FOC " + data.ui.input_focus_status), focus_color(data));
+    draw_text(padding, y, crop_line("FOC " + data.ui.input_focus_status), focus_color(data));
     y += 18;
-    draw_text(panel_x + padding, y, crop_line("CAM " + data.ui.camera_task_status), kMutedTextColor);
+    draw_text(padding, y, crop_line("CAM " + data.ui.camera_task_status), kMutedTextColor);
     y += 18;
-    draw_text(panel_x + padding, y, crop_line("MIC " + data.ui.microphone_task_status), kMutedTextColor);
+    draw_text(padding, y, crop_line("MIC " + data.ui.microphone_task_status), kMutedTextColor);
     y += 18;
-    draw_text(panel_x + padding, y, crop_line("GEN " + data.ui.generate_task_status), kMutedTextColor);
+    draw_text(padding, y, crop_line("GEN " + data.ui.generate_task_status), kMutedTextColor);
     y += 18;
-    draw_text(panel_x + padding, y, crop_line("BAT " + data.ui.batch_task_status), kMutedTextColor);
+    draw_text(padding, y, crop_line("BAT " + data.ui.batch_task_status), kMutedTextColor);
     y += 18;
-    draw_text(panel_x + padding, y, crop_line("P3  " + data.ui.particle_task_status), kMutedTextColor);
+    draw_text(padding, y, crop_line("P3  " + data.ui.particle_task_status), kMutedTextColor);
     y += 28;
 
-    draw_text(panel_x + padding, y, "EVENT LOG", kTextColor);
+    draw_text(padding, y, "EVENT LOG", kTextColor);
     y += 20;
     const std::vector<std::string>& notes = current_runtime_notes();
     const std::size_t visible_notes = std::min<std::size_t>(notes.size(), 10);
     for (std::size_t index = 0; index < visible_notes; ++index) {
         const std::size_t note_index = notes.size() - visible_notes + index;
         draw_text(
-            panel_x + padding,
+            padding,
             y,
             crop_line("> " + notes[note_index]),
             index + 1 == visible_notes ? kTextColor : kMutedTextColor);
@@ -743,8 +745,8 @@ void render_visual_frame() {
 
     render_background();
     render_camera_layer_card(state);
-    render_dandelion_world(state, data);
     render_status_panel(state, data, snapshot);
+    render_dandelion_world(state, data);
     render_buttons();
     update_window_title(state, data, snapshot);
     SDL_RenderPresent(g_renderer);
