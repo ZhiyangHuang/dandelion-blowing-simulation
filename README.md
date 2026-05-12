@@ -182,14 +182,3 @@ python .\python_mediapipe_bridge.py
 4. 程序起来了，但麦克风没有反应
 
 当前版本的麦克风输入来自 C++ 原生 `waveIn`。如果远端机器麦克风权限、驱动或默认录音设备异常，运行时就可能没有有效输入。
-
-**当前推荐的远端交付方式**
-
-最稳妥的方式不是只发 `exe`，而是把整个项目目录连同：
-
-- C++ 源码
-- Python 桥接脚本
-- `face_landmarker.task`
-- `run_live.bat`
-
-一起发给对方，然后让对方按上面的步骤配置环境并启动。因为当前版本依赖本地 Python、MediaPipe、OpenCV、SDL2 和 Windows 音频设备，单独拷贝一个 `exe` 还不足以完整运行。
