@@ -52,6 +52,9 @@ Current mode mapping:
 3 threads -> camera long + microphone long + general lane
 ```
 
+The live runtime is now launch-fixed rather than runtime-switchable.
+Choose the mode once at startup with `--single`, `--dual`, or `--triple`.
+
 ## Repository Layout
 
 Core runtime:
@@ -82,6 +85,7 @@ Docs / verification:
 - `PROJECT_PROGRESS.txt`
 - `queue_verification.cpp`
 - `queue_verification_output.txt`
+- `demo_io_loop_runtime_log.txt`
 
 ## Environment
 
@@ -115,6 +119,45 @@ Use the provided batch script:
 ```powershell
 .\run_live.bat
 ```
+
+Or launch a fixed evaluation mode explicitly:
+
+```powershell
+.\run_live.bat --single
+.\run_live.bat --dual
+.\run_live.bat --triple
+.\run_live.bat --triple --demo-camera
+.\run_live.bat --triple --demo-io-loop
+.\run_live.bat --triple --demo-io-loop --auto-exit-ms 5000 --log-file demo_io_loop_runtime_log.txt
+```
+
+Mode intent:
+
+- `--single`: deterministic sequential runtime
+- `--dual`: camera-prioritized constrained parallelism
+- `--triple`: fully partitioned listener + throughput runtime
+- `--demo-camera`: replace the live camera bridge with a stable manual demo source
+- `--demo-io-loop`: replace both live camera and live microphone sources with auto-looping simulated I/O
+- `--auto-exit-ms N`: stop automatically after `N` milliseconds
+- `--log-file PATH`: mirror runtime note output into `PATH`
+
+Recommended final-demo fallback when the live camera stack is flaky:
+
+- launch `.\run_live.bat --triple --demo-camera`
+- press `o` in the SDL window to inject a mouth-open pulse
+- keep the real microphone path live so the scheduler still demonstrates the camera-to-microphone handoff and particle pipeline
+
+Recommended fully self-running fallback when both live listener stacks are unstable:
+
+- launch `.\run_live.bat --triple --demo-io-loop`
+- the runtime will continuously cycle simulated camera-open and microphone-blow samples
+- this keeps the existing listener tasks, queues, and thread partitioning alive instead of replacing the scheduler with a one-shot scripted animation
+
+Recommended log-producing final-demo capture:
+
+- launch `.\run_live.bat --triple --demo-io-loop --auto-exit-ms 5000 --log-file demo_io_loop_runtime_log.txt`
+- the runtime will loop automatically, stop after five seconds, and leave a text log on disk
+- `demo_io_loop_runtime_log.txt` in this repo is an example capture generated from that path
 
 That script currently builds:
 
@@ -169,8 +212,8 @@ In the SDL window:
 - `q` or `Esc`: quit
 - `r`: reset
 - `c`: change dandelion layout
-- `1` / `2` / `3`: switch thread mode
 - `x`: force breeze fallback
+- `o`: inject a mouth-open pulse when `--demo-camera` is enabled
 
 ## What The Verifier Covers
 
@@ -179,6 +222,9 @@ Current verification includes:
 - queue precedence across realtime / interactive / throughput
 - single-thread burst-entry reseed
 - single-thread full-cycle and fallback-cycle completion
+- watchdog recovery after stale listener heartbeat timeout
+- scripted replay of `mouth open -> valid blow -> overlapping input -> reset`
+- fairness sanity: realtime, interactive, and throughput all make progress
 - mode collapse preserving downstream phase order
 - listener runtime snapshot bookkeeping
 - two-thread camera-long / microphone-short behavior
@@ -188,6 +234,49 @@ Current verification includes:
 - persistent-listener hard stop on mode collapse
 - short microphone lease not auto-renewing after expiration in `2-thread`
 
+The verifier also records report-friendly counters such as:
+
+- camera reseed count
+- microphone reseed count
+- watchdog recovery count
+- realtime slices per frame
+- average particle drain ticks
+
+## Verification Matrix
+
+| Invariant | Evidence |
+| --- | --- |
+| `L0` preemption outranks listener and business work | verifier checks reset / exit stop peer-lane dispatch and reseed correctly |
+| `L1` listener residency is mode-correct | verifier checks `single=short+short`, `dual=camera long + mic short`, `triple=long+long` |
+| queue ordering follows delay budgets | verifier checks realtime precedence over interactive and interactive handoff into throughput |
+| overlap is intentional rather than accidental | verifier checks microphone handoff can overlap active `P3` drain in multi-thread mode |
+| stalled listeners recover instead of wedging the runtime | verifier checks watchdog timeout clears stale listener state and reseeds the correct listener form |
+| throughput eventually drains | verifier checks full-cycle drain and fairness sanity with nonzero average drain ticks |
+
+## Design Trade-Offs
+
+- Long-listener vs short-listener split: long listeners amortize startup cost in multi-thread mode, while short listeners preserve deterministic entry ordering in single-thread mode.
+- Camera-prioritized `2-thread` mode: camera stays long-lived because it has the slower startup path and semantically opens the whole interaction chain.
+- Startup-fixed topology: locking the mode at launch makes demonstrations and grading more stable than runtime `3 -> 2 -> 1` migration.
+- Watchdog recovery over perfect migration bookkeeping: the project favors eventual recovery from stale listener state over complex exact ownership logic.
+- Indirect `P3` batching: `BatchParticleExecutionTask` keeps throughput visible and fair instead of letting every worker mutate particle queues independently.
+
+## Performance Observations
+
+- `single`: best for deterministic explanation and repeatable fixed-phase behavior.
+- `dual`: shows constrained overlap while preserving camera-first listener residency.
+- `triple`: gives the best responsiveness because camera, microphone, and general throughput work can stay partitioned.
+- Current counters make these comparisons visible at runtime through reseed counts, realtime slices per frame, watchdog recoveries, and average particle drain ticks.
+
+## Limitations And Future Work
+
+- This is a custom user-space scheduler/runtime, not a kernel scheduler.
+- Listener freshness still relies on external camera / microphone bridge behavior.
+- Timing goals such as the short-listener `10s` lease are approximate realtime guidance, not hard guarantees.
+- Sample identity still primarily uses timestamps; explicit sequence ids would make replay and dedupe stricter.
+- Fairness evidence is workload-specific to this interaction pipeline rather than a general scheduler proof.
+- Good next steps would be deterministic replay traces, starvation counters, adaptive lease policy, and more formal latency logging.
+
 ## Source-of-Truth Notes
 
 If documents disagree, use them in this order:
@@ -195,18 +284,15 @@ If documents disagree, use them in this order:
 1. current code behavior
 2. `DESIGN.md`
 3. `PROJECT_PROGRESS.txt`
+4. `ProjectGuideline.md`
 
-`ProjectGuideline.md` currently exists in the repo but is empty as of
-`2026-05-11`, so it does not currently add extra constraints beyond the files
-above.
-
-## Preparing `v2` Branch Upload
+## Preparing `v4` Branch Upload
 
 This repo contains generated binaries, object files, bridge JSON artifacts, and
 editor metadata during normal development. `.gitignore` is set up to keep those
 out of the next upload-oriented branch.
 
-Before pushing a clean `v2` branch, re-check:
+Before pushing a clean `v4` branch, re-check:
 
 - no generated `.exe` / `.o` / `.obj` files are staged
 - no runtime bridge JSON snapshots are staged

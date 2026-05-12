@@ -453,7 +453,8 @@ std::string listener_service_status_line(const ListenerServiceDiagnostics& diagn
 }
 
 std::string listener_sample_line(const ListenerServiceDiagnostics& diagnostics) {
-    return "SEEN " + std::to_string(diagnostics.last_seen_sample_ms) +
+    return "HB " + std::to_string(diagnostics.last_heartbeat_ms) +
+        " / SEEN " + std::to_string(diagnostics.last_seen_sample_ms) +
         " / SEED " + std::to_string(diagnostics.last_seeded_sample_ms) +
         " / USED " + std::to_string(diagnostics.last_consumed_sample_ms);
 }
@@ -482,14 +483,11 @@ void submit_visual_hotkey_task(SDL_Keycode key) {
             submit_task(make_breeze_task());
         }
         break;
-    case SDLK_1:
-        set_thread_mode(1);
-        break;
-    case SDLK_2:
-        set_thread_mode(2);
-        break;
-    case SDLK_3:
-        set_thread_mode(3);
+    case SDLK_o:
+        if (camera_demo_fallback_enabled()) {
+            trigger_camera_demo_pulse();
+            push_runtime_note("Demo camera fallback: injected mouth-open pulse.");
+        }
         break;
     default:
         break;
@@ -520,10 +518,7 @@ void rebuild_buttons() {
     push_button(0, "BREEZE", SDLK_x, kButtonFillActive);
     push_button(1, "QUIT", SDLK_q, kButtonFillWarn);
     row_y += button_height + 8;
-    push_button(0, "T1", SDLK_1, kButtonFill);
-    push_button(1, "T2", SDLK_2, kButtonFill);
-    row_y += button_height + 8;
-    push_button(0, "T3", SDLK_3, kButtonFill);
+    push_button(0, "MOUTH", SDLK_o, kButtonFillActive);
 }
 
 void handle_sdl_events() {
@@ -875,6 +870,47 @@ void render_status_panel(const RuntimeState& state,
         panel_x + padding,
         y,
         crop_text("SCHED " + data.ui.scheduler_state, semantic_chars),
+        kMutedTextColor);
+    y += 26;
+
+    draw_text(panel_x + padding, y, "RUNTIME COUNTERS", kTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(
+            "RESEED CAM " + std::to_string(snapshot.counters.camera_reseed_count) +
+                " / MIC " + std::to_string(snapshot.counters.microphone_reseed_count),
+            semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(
+            "WATCHDOG " + std::to_string(snapshot.counters.watchdog_recovery_count) +
+                " / RT SLICE " +
+                std::to_string(snapshot.counters.realtime_slices_last_frame),
+            semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(
+            "RT MAX " + std::to_string(snapshot.counters.max_realtime_slices_per_frame) +
+                " / DRAIN " +
+                std::to_string(snapshot.counters.particle_drain_cycles_completed),
+            semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(
+            "AVG DRAIN " +
+                std::to_string(snapshot.counters.average_particle_drain_ticks),
+            semantic_chars),
         kMutedTextColor);
     y += 26;
 

@@ -232,9 +232,22 @@ struct ListenerServiceDiagnostics {
     long long short_lease_started_at_ms = 0;
     long long short_lease_until_ms = 0;
     long long short_detect_ready_at_ms = 0;
+    long long last_heartbeat_ms = 0;
     long long last_seen_sample_ms = 0;
     long long last_seeded_sample_ms = 0;
     long long last_consumed_sample_ms = 0;
+};
+
+struct RuntimeCounters {
+    int camera_reseed_count = 0;
+    int microphone_reseed_count = 0;
+    int watchdog_recovery_count = 0;
+    int realtime_slices_this_frame = 0;
+    int realtime_slices_last_frame = 0;
+    int max_realtime_slices_per_frame = 0;
+    int particle_drain_cycles_completed = 0;
+    long long total_particle_drain_ticks = 0;
+    double average_particle_drain_ticks = 0.0;
 };
 
 struct SchedulerSnapshot {
@@ -259,6 +272,7 @@ struct SchedulerSnapshot {
     std::string l1_microphone_lane = "n/a";
     std::string l1_gate_lane = "n/a";
     std::string l1_blocked_reason = "n/a";
+    RuntimeCounters counters;
     ListenerServiceDiagnostics camera_listener_runtime;
     ListenerServiceDiagnostics microphone_listener_runtime;
     OrchestrationRecord human_behavior_flow;
@@ -330,6 +344,7 @@ struct CameraListenerState {
     long long short_lease_until_ms = 0;
     long long short_warmup_until_ms = 0;
     long long short_detect_ready_at_ms = 0;
+    long long last_heartbeat_ms = 0;
     long long last_seen_sample_ms = 0;
     long long last_seeded_sample_ms = 0;
     long long last_consumed_sample_ms = 0;
@@ -351,6 +366,7 @@ struct MicrophoneListenerState {
     long long short_lease_until_ms = 0;
     long long short_warmup_until_ms = 0;
     long long short_detect_ready_at_ms = 0;
+    long long last_heartbeat_ms = 0;
     long long last_seen_sample_ms = 0;
     long long last_seeded_sample_ms = 0;
     long long last_consumed_sample_ms = 0;
@@ -378,6 +394,7 @@ struct RuntimeState {
     MicrophoneListenerState microphone_listener;
     CameraBridgeState camera_bridge;
     MicrophoneBridgeState microphone_bridge;
+    RuntimeCounters counters;
 };
 
 struct LockDebugState {
@@ -677,6 +694,8 @@ void with_shared_state_write(bool lock_particle,
 void push_runtime_note(const std::string& note);
 const std::vector<std::string>& current_runtime_notes();
 std::vector<std::string> drain_runtime_notes();
+bool set_runtime_log_file(const std::string& path);
+void close_runtime_log_file();
 void start_camera_bridge();
 void stop_camera_bridge();
 void start_microphone_bridge();
@@ -685,6 +704,11 @@ void set_camera_bridge_enabled(bool enabled);
 void set_microphone_bridge_enabled(bool enabled);
 bool camera_bridge_enabled();
 bool microphone_bridge_enabled();
+void set_camera_demo_fallback_enabled(bool enabled);
+bool camera_demo_fallback_enabled();
+void trigger_camera_demo_pulse();
+void set_demo_io_loop_enabled(bool enabled);
+bool demo_io_loop_enabled();
 void refresh_bridge_inputs();
 
 bool init_visualization();

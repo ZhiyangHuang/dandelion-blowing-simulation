@@ -1644,6 +1644,418 @@ CheckResult verify_mode_collapse_replaces_persistent_listener_with_burst() {
     return result;
 }
 
+CheckResult verify_watchdog_reseeds_stale_camera_listener() {
+    prepare_ready_runtime(true, true);
+    set_thread_mode(2);
+    clear_task_queue(PriorityLevel::P1_SYSTEM);
+    clear_task_queue(PriorityLevel::P2_REALTIME);
+    clear_task_queue(PriorityLevel::P2_FUNCTIONAL);
+    clear_task_queue(PriorityLevel::P3_PARTICLE);
+
+    scheduler_tick();
+    drain_runtime_notes();
+    const int watchdog_before = scheduler_snapshot().counters.watchdog_recovery_count;
+
+    with_shared_state_write(false, false, true, []() {
+        RuntimeState& state_ref = runtime_state();
+        state_ref.camera_listener.last_heartbeat_ms =
+            scheduler_task_support::current_time_ms() - 5000;
+        state_ref.camera_listener.sample_ready = true;
+        state_ref.camera_listener.stale = false;
+        state_ref.camera_listener.device_available = true;
+        state_ref.camera_listener.bridge_running = true;
+        state_ref.camera_listener.enabled = true;
+        state_ref.camera_bridge.bridge_connected = true;
+        state_ref.camera_bridge.sample_ready = true;
+        state_ref.camera_bridge.device_unavailable = false;
+        state_ref.camera_bridge.timestamp_ms =
+            scheduler_task_support::current_time_ms() - 5000;
+        state_ref.camera_device_available = true;
+    });
+
+    clear_task_queue(PriorityLevel::P2_REALTIME);
+    clear_task_queue(PriorityLevel::P2_FUNCTIONAL);
+    scheduler_tick();
+
+    const SchedulerSnapshot snapshot = scheduler_snapshot();
+    const std::vector<std::string> notes = current_runtime_notes();
+    const bool watchdog_note_present = std::any_of(
+        notes.begin(),
+        notes.end(),
+        [](const std::string& note) {
+            return note.find("Watchdog: camera listener heartbeat timed out") !=
+                std::string::npos;
+        });
+
+    CheckResult result;
+    result.name = "watchdog reseeds stale camera listener after heartbeat timeout";
+    result.passed =
+        snapshot.counters.watchdog_recovery_count == watchdog_before + 1 &&
+        snapshot_has_task_type(snapshot.p2_realtime_queue, TaskType::CAMERA_LISTENER_SERVICE) &&
+        watchdog_note_present;
+    result.details.push_back(
+        "watchdog-before=" + std::to_string(watchdog_before));
+    result.details.push_back(
+        "watchdog-after=" +
+        std::to_string(snapshot.counters.watchdog_recovery_count));
+    result.details.push_back(
+        std::string("camera-service-reseeded=") +
+        (snapshot_has_task_type(snapshot.p2_realtime_queue, TaskType::CAMERA_LISTENER_SERVICE)
+             ? "yes"
+             : "no"));
+    result.details.push_back(
+        std::string("watchdog-note=") +
+        (watchdog_note_present ? "present" : "missing"));
+    return result;
+}
+
+CheckResult verify_scripted_replay_survives_overlap_and_reset() {
+    prepare_ready_runtime(true, true);
+    set_thread_mode(3);
+    clear_task_queue(PriorityLevel::P1_SYSTEM);
+    clear_task_queue(PriorityLevel::P2_REALTIME);
+    clear_task_queue(PriorityLevel::P2_FUNCTIONAL);
+    clear_task_queue(PriorityLevel::P3_PARTICLE);
+
+    set_camera_bridge_enabled(false);
+    set_microphone_bridge_enabled(false);
+
+    const long long base_ms = scheduler_task_support::current_time_ms();
+    with_shared_state_write(true, true, true, [base_ms]() {
+        RuntimeState& state_ref = runtime_state();
+        state_ref.world.dandelion_x = 0.95f;
+        state_ref.world.dandelion_y = 0.5f;
+        scheduler_task_support::rebuild_particle_ring_for_world(0.95f, 0.5f, 100);
+
+        state_ref.camera_listener.enabled = true;
+        state_ref.camera_listener.bridge_running = true;
+        state_ref.camera_listener.device_available = true;
+        state_ref.camera_listener.sample_ready = true;
+        state_ref.camera_listener.stale = false;
+        state_ref.camera_listener.last_seen_sample_ms = base_ms;
+        state_ref.camera_bridge.bridge_connected = true;
+        state_ref.camera_bridge.sample_ready = true;
+        state_ref.camera_bridge.device_unavailable = false;
+        state_ref.camera_bridge.face_detected = true;
+        state_ref.camera_bridge.mouth_open_state = true;
+        state_ref.camera_bridge.looking_forward = true;
+        state_ref.camera_bridge.timestamp_ms = base_ms;
+        state_ref.camera_bridge.mouth_center_x = 0.52f;
+        state_ref.camera_bridge.mouth_center_y = 0.37f;
+        state_ref.camera_device_available = true;
+        state_ref.camera_available = true;
+
+        state_ref.microphone_listener.enabled = true;
+        state_ref.microphone_listener.bridge_running = true;
+        state_ref.microphone_listener.device_available = true;
+        state_ref.microphone_listener.sample_ready = true;
+        state_ref.microphone_listener.stale = false;
+        state_ref.microphone_listener.last_seen_sample_ms = base_ms + 1;
+        state_ref.microphone_bridge.bridge_connected = true;
+        state_ref.microphone_bridge.sample_ready = true;
+        state_ref.microphone_bridge.device_unavailable = false;
+        state_ref.microphone_bridge.voice_detected = true;
+        state_ref.microphone_bridge.fallback_requested = false;
+        state_ref.microphone_bridge.suggested_power = 0.45f;
+        state_ref.microphone_bridge.timestamp_ms = base_ms + 1;
+        state_ref.microphone_device_available = true;
+
+        state_ref.camera_focus_locked = true;
+        state_ref.microphone_focus_locked = false;
+        state_ref.microphone_focus_consumed_for_gate = false;
+        state_ref.camera_gate_open = false;
+        state_ref.camera_gate_frame = -1;
+        state_ref.camera_gate_until_ms = 0;
+        state_ref.microphone_focus_until_ms = 0;
+        state_ref.last_consumed_microphone_sample_ms = 0;
+    });
+
+    bool saw_camera = false;
+    bool saw_microphone = false;
+    bool saw_generate = false;
+    bool p3_became_active = false;
+    bool injected_overlap = false;
+    bool saw_overlap = false;
+    bool reset_submitted = false;
+    bool saw_reset = false;
+    bool reseeded_after_reset = false;
+    int ticks_used = 0;
+    SchedulerSnapshot last_snapshot;
+
+    for (int tick = 0; tick < 120; ++tick) {
+        scheduler_tick();
+        ticks_used = tick + 1;
+        const SchedulerSnapshot snapshot = scheduler_snapshot();
+        last_snapshot = snapshot;
+        const std::vector<std::string> notes = current_runtime_notes();
+
+        for (const RuntimeThread& thread : snapshot.threads) {
+            saw_camera = saw_camera || thread.last_completed_task_type == TaskType::CAMERA;
+            saw_microphone =
+                saw_microphone || thread.last_completed_task_type == TaskType::MICROPHONE;
+            saw_generate =
+                saw_generate || thread.last_completed_task_type == TaskType::GENERATE_PARTICLE;
+            saw_reset = saw_reset || thread.last_completed_task_type == TaskType::RESET;
+        }
+
+        const bool p3_active =
+            snapshot.p3_move_queued + snapshot.p3_move_running +
+                snapshot.p3_fade_queued + snapshot.p3_fade_running >
+            0;
+        p3_became_active = p3_became_active || p3_active;
+
+        if (saw_generate && p3_active && !injected_overlap) {
+            const long long overlap_ms = base_ms + 100 + tick;
+            with_shared_state_write(false, false, true, [overlap_ms]() {
+                RuntimeState& state_ref = runtime_state();
+                state_ref.microphone_listener.sample_ready = true;
+                state_ref.microphone_listener.stale = false;
+                state_ref.microphone_listener.last_seen_sample_ms = overlap_ms;
+                state_ref.microphone_bridge.bridge_connected = true;
+                state_ref.microphone_bridge.sample_ready = true;
+                state_ref.microphone_bridge.device_unavailable = false;
+                state_ref.microphone_bridge.voice_detected = true;
+                state_ref.microphone_bridge.fallback_requested = false;
+                state_ref.microphone_bridge.suggested_power = 0.40f;
+                state_ref.microphone_bridge.timestamp_ms = overlap_ms;
+                state_ref.camera_gate_open = true;
+                state_ref.camera_gate_frame =
+                    scheduler_task_support::current_scheduler_frame_index();
+                state_ref.camera_gate_until_ms =
+                    scheduler_task_support::current_time_ms() +
+                    scheduler_task_support::kCameraGateHoldMs;
+                state_ref.microphone_focus_locked = true;
+                state_ref.microphone_focus_until_ms =
+                    scheduler_task_support::current_time_ms() +
+                    scheduler_task_support::kCameraGateHoldMs;
+            });
+            injected_overlap = true;
+        }
+
+        if (injected_overlap) {
+            const bool overlap_note_present = std::any_of(
+                notes.begin(),
+                notes.end(),
+                [](const std::string& note) {
+                    return note.find(
+                               "multi-thread microphone reseed from live listener while queues remain active") !=
+                        std::string::npos;
+                });
+            const bool overlap_generate_present = std::any_of(
+                snapshot.threads.begin(),
+                snapshot.threads.end(),
+                [p3_active](const RuntimeThread& thread) {
+                    return p3_active &&
+                        thread.last_completed_task_type == TaskType::GENERATE_PARTICLE;
+                });
+            saw_overlap = saw_overlap || overlap_note_present || overlap_generate_present;
+        }
+
+        if (saw_overlap && !reset_submitted) {
+            submit_task(make_reset_task());
+            reset_submitted = true;
+        }
+
+        if (saw_reset &&
+            !snapshot.p2_realtime_queue.empty() &&
+            snapshot.counters.camera_reseed_count > 0 &&
+            snapshot.counters.microphone_reseed_count > 0) {
+            reseeded_after_reset = true;
+            break;
+        }
+    }
+
+    remove_camera_bridge_fixture();
+    remove_microphone_bridge_fixture();
+    set_camera_bridge_enabled(false);
+    set_microphone_bridge_enabled(false);
+
+    CheckResult result;
+    result.name = "scripted replay survives mouth-open -> blow -> overlap -> reset";
+    result.passed =
+        saw_camera &&
+        saw_microphone &&
+        saw_generate &&
+        p3_became_active &&
+        injected_overlap &&
+        saw_overlap &&
+        saw_reset &&
+        reseeded_after_reset;
+    result.details.push_back(std::string("saw-camera=") + (saw_camera ? "yes" : "no"));
+    result.details.push_back(std::string("saw-microphone=") + (saw_microphone ? "yes" : "no"));
+    result.details.push_back(std::string("saw-generate=") + (saw_generate ? "yes" : "no"));
+    result.details.push_back(std::string("p3-active=") + (p3_became_active ? "yes" : "no"));
+    result.details.push_back(
+        std::string("overlap-injected=") + (injected_overlap ? "yes" : "no"));
+    result.details.push_back(std::string("overlap-seen=") + (saw_overlap ? "yes" : "no"));
+    result.details.push_back(std::string("reset-ran=") + (saw_reset ? "yes" : "no"));
+    result.details.push_back(
+        std::string("reseeded-after-reset=") + (reseeded_after_reset ? "yes" : "no"));
+    result.details.push_back("ticks-used=" + std::to_string(ticks_used));
+    result.details.push_back(
+        "camera-reseed-count=" + std::to_string(last_snapshot.counters.camera_reseed_count));
+    result.details.push_back(
+        "microphone-reseed-count=" +
+        std::to_string(last_snapshot.counters.microphone_reseed_count));
+    result.details.push_back(
+        "watchdog-recoveries=" +
+        std::to_string(last_snapshot.counters.watchdog_recovery_count));
+    return result;
+}
+
+CheckResult verify_fairness_sanity_realtime_interactive_and_p3_all_progress() {
+    prepare_ready_runtime(true, true);
+    set_thread_mode(3);
+    clear_task_queue(PriorityLevel::P1_SYSTEM);
+    clear_task_queue(PriorityLevel::P2_REALTIME);
+    clear_task_queue(PriorityLevel::P2_FUNCTIONAL);
+    clear_task_queue(PriorityLevel::P3_PARTICLE);
+
+    set_camera_bridge_enabled(false);
+    set_microphone_bridge_enabled(false);
+
+    const long long base_ms = scheduler_task_support::current_time_ms();
+    with_shared_state_write(true, true, true, [base_ms]() {
+        RuntimeState& state_ref = runtime_state();
+        state_ref.world.dandelion_x = 0.95f;
+        state_ref.world.dandelion_y = 0.5f;
+        state_ref.world.power = 0.50f;
+        scheduler_task_support::rebuild_particle_ring_for_world(0.95f, 0.5f, 100);
+
+        state_ref.camera_listener.enabled = true;
+        state_ref.camera_listener.bridge_running = true;
+        state_ref.camera_listener.device_available = true;
+        state_ref.camera_listener.sample_ready = true;
+        state_ref.camera_listener.stale = false;
+        state_ref.camera_listener.last_seen_sample_ms = base_ms;
+        state_ref.camera_bridge.bridge_connected = true;
+        state_ref.camera_bridge.sample_ready = true;
+        state_ref.camera_bridge.device_unavailable = false;
+        state_ref.camera_bridge.face_detected = true;
+        state_ref.camera_bridge.mouth_open_state = true;
+        state_ref.camera_bridge.looking_forward = true;
+        state_ref.camera_bridge.timestamp_ms = base_ms;
+        state_ref.camera_bridge.mouth_center_x = 0.52f;
+        state_ref.camera_bridge.mouth_center_y = 0.37f;
+        state_ref.camera_device_available = true;
+        state_ref.camera_available = true;
+
+        state_ref.microphone_listener.enabled = true;
+        state_ref.microphone_listener.bridge_running = true;
+        state_ref.microphone_listener.device_available = true;
+        state_ref.microphone_listener.sample_ready = true;
+        state_ref.microphone_listener.stale = false;
+        state_ref.microphone_listener.last_seen_sample_ms = base_ms + 1;
+        state_ref.microphone_bridge.bridge_connected = true;
+        state_ref.microphone_bridge.sample_ready = true;
+        state_ref.microphone_bridge.device_unavailable = false;
+        state_ref.microphone_bridge.voice_detected = true;
+        state_ref.microphone_bridge.fallback_requested = false;
+        state_ref.microphone_bridge.suggested_power = 0.50f;
+        state_ref.microphone_bridge.timestamp_ms = base_ms + 1;
+        state_ref.microphone_device_available = true;
+
+        state_ref.camera_focus_locked = true;
+        state_ref.microphone_focus_locked = false;
+        state_ref.microphone_focus_consumed_for_gate = false;
+        state_ref.camera_gate_open = false;
+        state_ref.camera_gate_frame = -1;
+        state_ref.camera_gate_until_ms = 0;
+        state_ref.microphone_focus_until_ms = 0;
+        state_ref.last_consumed_microphone_sample_ms = 0;
+    });
+
+    bool saw_realtime = false;
+    bool saw_camera = false;
+    bool saw_microphone = false;
+    bool saw_p3 = false;
+    bool drained = false;
+    int ticks_used = 0;
+    SchedulerSnapshot last_snapshot;
+
+    for (int tick = 0; tick < 120; ++tick) {
+        scheduler_tick();
+        ticks_used = tick + 1;
+        const SchedulerSnapshot snapshot = scheduler_snapshot();
+        last_snapshot = snapshot;
+
+        saw_realtime = saw_realtime || snapshot.counters.realtime_slices_last_frame > 0;
+        saw_camera = saw_camera ||
+            std::any_of(
+                snapshot.threads.begin(),
+                snapshot.threads.end(),
+                [](const RuntimeThread& thread) {
+                    return thread.last_completed_task_type == TaskType::CAMERA;
+                });
+        saw_microphone = saw_microphone ||
+            std::any_of(
+                snapshot.threads.begin(),
+                snapshot.threads.end(),
+                [](const RuntimeThread& thread) {
+                    return thread.last_completed_task_type == TaskType::MICROPHONE;
+                });
+        saw_p3 = saw_p3 ||
+            snapshot.p3_move_queued + snapshot.p3_move_running +
+                snapshot.p3_fade_queued + snapshot.p3_fade_running >
+            0;
+
+        if ((saw_camera || saw_microphone) && saw_p3 && !drained) {
+            with_shared_state_write(false, false, true, []() {
+                RuntimeState& state_ref = runtime_state();
+                state_ref.camera_bridge.mouth_open_state = false;
+                state_ref.camera_bridge.looking_forward = false;
+                state_ref.microphone_bridge.voice_detected = false;
+                state_ref.microphone_bridge.sample_ready = false;
+                state_ref.microphone_listener.sample_ready = false;
+                state_ref.camera_gate_open = false;
+                state_ref.camera_gate_frame = -1;
+                state_ref.camera_gate_until_ms = 0;
+                state_ref.microphone_focus_locked = false;
+                state_ref.microphone_focus_until_ms = 0;
+                state_ref.microphone_focus_consumed_for_gate = true;
+            });
+        }
+
+        drained =
+            drained ||
+            (snapshot.counters.particle_drain_cycles_completed > 0 &&
+             snapshot.p3_move_queued == 0 &&
+             snapshot.p3_move_running == 0 &&
+             snapshot.p3_fade_queued == 0 &&
+             snapshot.p3_fade_running == 0);
+        if (drained) {
+            break;
+        }
+    }
+
+    remove_camera_bridge_fixture();
+    remove_microphone_bridge_fixture();
+    set_camera_bridge_enabled(false);
+    set_microphone_bridge_enabled(false);
+
+    CheckResult result;
+    result.name = "fairness sanity: realtime, interactive, and throughput all make progress";
+    result.passed =
+        saw_realtime &&
+        saw_camera &&
+        saw_microphone &&
+        saw_p3 &&
+        drained &&
+        last_snapshot.counters.average_particle_drain_ticks > 0.0;
+    result.details.push_back(std::string("saw-realtime=") + (saw_realtime ? "yes" : "no"));
+    result.details.push_back(std::string("saw-camera=") + (saw_camera ? "yes" : "no"));
+    result.details.push_back(std::string("saw-microphone=") + (saw_microphone ? "yes" : "no"));
+    result.details.push_back(std::string("saw-p3=") + (saw_p3 ? "yes" : "no"));
+    result.details.push_back(std::string("drained=") + (drained ? "yes" : "no"));
+    result.details.push_back("ticks-used=" + std::to_string(ticks_used));
+    result.details.push_back(
+        "avg-drain-ticks=" + std::to_string(last_snapshot.counters.average_particle_drain_ticks));
+    result.details.push_back(
+        "realtime-slices-frame=" +
+        std::to_string(last_snapshot.counters.realtime_slices_last_frame));
+    return result;
+}
+
 }  // namespace
 
 int main() {
@@ -1665,6 +2077,9 @@ int main() {
         verify_multithread_camera_reseed_while_queues_active(),
         verify_multithread_l1_realtime_cuts_across_p2_slots(),
         verify_multithread_microphone_handoff_overlaps_p3_drain(),
+        verify_watchdog_reseeds_stale_camera_listener(),
+        verify_scripted_replay_survives_overlap_and_reset(),
+        verify_fairness_sanity_realtime_interactive_and_p3_all_progress(),
         verify_p1_reset_preempts_multithread_lanes(),
         verify_exit_requests_shutdown_and_stops_peer_dispatch(),
         verify_mode_collapse_keeps_general_work_runnable(),

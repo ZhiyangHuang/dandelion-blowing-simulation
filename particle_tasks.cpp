@@ -132,6 +132,14 @@ void BatchParticleExecutionTask::run_cycle(bool resumed) {
     });
 
     if (stage_finished) {
+        with_shared_state_write(false, false, true, [this]() {
+            RuntimeCounters& counters = runtime_state().counters;
+            counters.particle_drain_cycles_completed++;
+            counters.total_particle_drain_ticks += tick_count_;
+            counters.average_particle_drain_ticks =
+                static_cast<double>(counters.total_particle_drain_ticks) /
+                static_cast<double>(counters.particle_drain_cycles_completed);
+        });
         push_runtime_note("BatchParticleExecutionTask: feeder drained current P3 stage.");
     }
 

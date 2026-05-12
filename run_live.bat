@@ -19,4 +19,4 @@ if errorlevel 1 (
 
 set "PATH=%ORIGINAL_PATH%"
 echo Launching live runtime...
-.\dandelion_live.exe
+.\dandelion_live.exe %*

@@ -23,9 +23,15 @@ namespace {
 const char* kCameraBridgePath = "camera_bridge_latest.json";
 const char* kCameraControlPath = "camera_bridge_control.json";
 const char* kMicrophoneBridgePath = "microphone_bridge_latest.json";
+constexpr long long kCameraDemoPulseMs = 1400;
+constexpr long long kDemoIoCycleMs = 3200;
+constexpr long long kDemoCameraOpenMs = 700;
+constexpr long long kDemoMicrophoneStartMs = 180;
+constexpr long long kDemoMicrophoneEndMs = 820;
 
 CameraBridgeState parse_camera_bridge_from_json(const std::string& payload);
 MicrophoneBridgeState parse_microphone_bridge_from_json(const std::string& payload);
+long long wall_clock_ms();
 
 CameraBridgeState camera_bridge_disabled_state(const std::string& status_text) {
     CameraBridgeState state;
@@ -55,6 +61,61 @@ MicrophoneBridgeState microphone_bridge_disabled_state(const std::string& backen
     state.timestamp_ms = 0;
     state.backend = backend;
     state.status_text = backend;
+    return state;
+}
+
+CameraBridgeState camera_demo_fallback_state(bool mouth_open_state) {
+    CameraBridgeState state;
+    state.bridge_connected = true;
+    state.sample_ready = true;
+    state.device_unavailable = false;
+    state.face_detected = true;
+    state.mouth_open_state = mouth_open_state;
+    state.looking_forward = true;
+    state.mouth_center_x = 0.52f;
+    state.mouth_center_y = 0.37f;
+    state.confidence = 1.0f;
+    state.jaw_open_score = mouth_open_state ? 0.85f : 0.10f;
+    state.mouth_open_ratio = mouth_open_state ? 0.75f : 0.12f;
+    state.timestamp_ms = wall_clock_ms();
+    state.backend = "camera-demo-fallback";
+    state.status_text = mouth_open_state
+        ? "camera demo fallback pulse active"
+        : "camera demo fallback idle";
+    return state;
+}
+
+CameraBridgeState camera_demo_loop_state(long long cycle_start_ms,
+                                         long long phase_ms) {
+    const bool mouth_open_state = phase_ms >= 0 && phase_ms < kDemoCameraOpenMs;
+    CameraBridgeState state = camera_demo_fallback_state(mouth_open_state);
+    state.timestamp_ms = cycle_start_ms + 1;
+    state.status_text = mouth_open_state
+        ? "camera demo loop mouth-open sample"
+        : "camera demo loop idle sample";
+    return state;
+}
+
+MicrophoneBridgeState microphone_demo_loop_state(long long cycle_start_ms,
+                                                 long long phase_ms) {
+    MicrophoneBridgeState state;
+    const bool voice_window =
+        phase_ms >= kDemoMicrophoneStartMs &&
+        phase_ms < kDemoMicrophoneEndMs;
+    state.bridge_connected = true;
+    state.sample_ready = true;
+    state.device_unavailable = false;
+    state.voice_detected = voice_window;
+    state.fallback_requested = false;
+    state.suggested_power = voice_window ? 0.45f : 0.1f;
+    state.direction_x = 0.0f;
+    state.direction_y = -1.0f;
+    state.confidence = voice_window ? 0.9f : 0.3f;
+    state.timestamp_ms = cycle_start_ms + 2;
+    state.backend = "microphone-demo-loop";
+    state.status_text = voice_window
+        ? "microphone demo loop blow sample"
+        : "microphone demo loop idle sample";
     return state;
 }
 
@@ -128,10 +189,12 @@ void sync_camera_bridge_state(bool listener_enabled,
     if (!listener_enabled) {
         state.camera_listener.started_at_ms = 0;
         state.camera_listener.first_mouth_seen_at_ms = 0;
+        state.camera_listener.last_heartbeat_ms = 0;
         state.camera_listener.last_seen_sample_ms = 0;
         state.camera_listener.last_seeded_sample_ms = 0;
         state.camera_listener.last_consumed_sample_ms = 0;
     } else {
+        state.camera_listener.last_heartbeat_ms = now_ms;
         if (snapshot.bridge_connected &&
             snapshot.sample_ready &&
             snapshot.timestamp_ms > 0) {
@@ -162,6 +225,7 @@ void sync_microphone_bridge_state(bool listener_enabled,
                                   bool bridge_running,
                                   const MicrophoneBridgeState& snapshot) {
     RuntimeState& state = runtime_state();
+    const long long now_ms = wall_clock_ms();
     state.microphone_listener.enabled = listener_enabled;
     state.microphone_listener.bridge_running = listener_enabled && bridge_running;
     state.microphone_listener.device_available =
@@ -176,13 +240,17 @@ void sync_microphone_bridge_state(bool listener_enabled,
     state.microphone_device_available = state.microphone_listener.device_available;
     if (!listener_enabled) {
         state.microphone_available = false;
+        state.microphone_listener.last_heartbeat_ms = 0;
         state.microphone_listener.last_seen_sample_ms = 0;
         state.microphone_listener.last_seeded_sample_ms = 0;
         state.microphone_listener.last_consumed_sample_ms = 0;
     } else if (snapshot.bridge_connected &&
                snapshot.sample_ready &&
                snapshot.timestamp_ms > 0) {
+        state.microphone_listener.last_heartbeat_ms = now_ms;
         state.microphone_listener.last_seen_sample_ms = snapshot.timestamp_ms;
+    } else if (listener_enabled) {
+        state.microphone_listener.last_heartbeat_ms = now_ms;
     }
     state.microphone_listener.last_consumed_sample_ms =
         state.last_consumed_microphone_sample_ms;
@@ -941,7 +1009,11 @@ MicrophoneBridgeState parse_microphone_bridge_from_json(const std::string& paylo
 #if defined(_WIN32)
 static CameraBridgeController g_camera;
 #endif
+static bool g_camera_enabled = false;
 static bool g_microphone_enabled = false;
+static bool g_camera_demo_fallback_enabled = false;
+static long long g_camera_demo_pulse_until_ms = 0;
+static bool g_demo_io_loop_enabled = false;
 
 void start_camera_bridge() {
     set_camera_bridge_enabled(true);
@@ -965,8 +1037,9 @@ void stop_microphone_bridge() {
 }
 
 void set_camera_bridge_enabled(bool enabled) {
+    g_camera_enabled = enabled;
 #if defined(_WIN32)
-    if (enabled) {
+    if (enabled && !g_camera_demo_fallback_enabled) {
         remove_file_if_exists(kCameraBridgePath);
         g_camera.start();
     } else {
@@ -999,32 +1072,97 @@ void set_microphone_bridge_enabled(bool enabled) {
 }
 
 bool camera_bridge_enabled() {
-#if defined(_WIN32)
-    return g_camera.enabled();
-#else
-    return false;
-#endif
+    return g_camera_enabled;
 }
 
 bool microphone_bridge_enabled() {
     return g_microphone_enabled;
 }
 
+void set_camera_demo_fallback_enabled(bool enabled) {
+    g_camera_demo_fallback_enabled = enabled;
+    if (!enabled) {
+        g_camera_demo_pulse_until_ms = 0;
+    }
+#if defined(_WIN32)
+    if (enabled) {
+        g_camera.stop();
+    }
+#endif
+}
+
+bool camera_demo_fallback_enabled() {
+    return g_camera_demo_fallback_enabled;
+}
+
+void trigger_camera_demo_pulse() {
+    if (!g_camera_demo_fallback_enabled) {
+        return;
+    }
+    g_camera_demo_pulse_until_ms = wall_clock_ms() + kCameraDemoPulseMs;
+}
+
+void set_demo_io_loop_enabled(bool enabled) {
+    g_demo_io_loop_enabled = enabled;
+    if (enabled) {
+        g_camera_demo_fallback_enabled = true;
+        g_camera_enabled = true;
+        g_microphone_enabled = true;
+#if defined(_WIN32)
+        g_camera.stop();
+        native_microphone_bridge().stop();
+#endif
+    }
+}
+
+bool demo_io_loop_enabled() {
+    return g_demo_io_loop_enabled;
+}
+
 void refresh_bridge_inputs() {
     CameraBridgeState cam_state;
+    if (!g_camera_enabled) {
+        sync_camera_bridge_state(
+            false,
+            false,
+            camera_bridge_disabled_state("camera listener disabled"));
+    } else if (g_demo_io_loop_enabled) {
+        const long long now_ms = wall_clock_ms();
+        const long long phase_ms = now_ms % kDemoIoCycleMs;
+        const long long cycle_start_ms = now_ms - phase_ms;
+        sync_camera_bridge_state(
+            true,
+            true,
+            camera_demo_loop_state(cycle_start_ms, phase_ms));
+    } else if (g_camera_demo_fallback_enabled) {
+        const bool pulse_active = wall_clock_ms() <= g_camera_demo_pulse_until_ms;
+        sync_camera_bridge_state(true, true, camera_demo_fallback_state(pulse_active));
+    } else {
 #if defined(_WIN32)
-    if (g_camera.refresh(cam_state)) {
-        sync_camera_bridge_state(g_camera.enabled(), g_camera.running(), cam_state);
-    }
+        if (g_camera.refresh(cam_state)) {
+            sync_camera_bridge_state(g_camera.enabled(), g_camera.running(), cam_state);
+        }
 #else
-    sync_camera_bridge_state(false, false, camera_bridge_disabled_state("camera bridge unsupported"));
+        sync_camera_bridge_state(false, false, camera_bridge_disabled_state("camera bridge unsupported"));
 #endif
+    }
 
     if (!g_microphone_enabled) {
         sync_microphone_bridge_state(
             false,
             false,
             microphone_bridge_disabled_state("microphone listener disabled"));
+        return;
+    }
+
+    if (g_demo_io_loop_enabled) {
+        const long long now_ms = wall_clock_ms();
+        const long long phase_ms = now_ms % kDemoIoCycleMs;
+        const long long cycle_start_ms = now_ms - phase_ms;
+        sync_microphone_bridge_state(
+            true,
+            true,
+            microphone_demo_loop_state(cycle_start_ms, phase_ms));
         return;
     }
 

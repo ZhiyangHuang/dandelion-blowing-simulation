@@ -210,6 +210,11 @@ Single-thread mode is for deterministic ordering, not for maximum throughput.
   Lane 2: Microphone short listener + general interactive/throughput work
 ```
 
+Evaluation policy:
+
+- live runs are locked at startup with `--single`, `--dual`, or `--triple`
+- the project no longer depends on runtime thread-mode hot switching for its main demonstration path
+
 ## 8. Scheduler Contracts
 
 ### 8.1 `L0`
@@ -297,7 +302,9 @@ Current diagnostic surfaces:
 - scheduler queue snapshots
 - thread / lane status
 - `L1 Realtime` diagnostics
+- listener heartbeat / seen / seeded / consumed sample state
 - single-thread chain diagnostics
+- runtime counters for reseed, watchdog recovery, realtime slices, and average drain ticks
 - orchestration-flow records
 - headless verifier output in `queue_verification_output.txt`
 
@@ -308,6 +315,9 @@ Verification currently covers:
 - single-thread fallback-cycle reseed
 - multi-thread camera and microphone lane partitioning
 - `2-thread` camera-long / microphone-short residency
+- watchdog recovery after stale listener heartbeat timeout
+- scripted replay of `mouth-open -> blow -> overlap -> reset`
+- fairness sanity that `L1`, `L2`, and `L3` all make visible progress
 - `3 -> 1` collapse with persistent-service hard stop and burst reseed
 - reset / exit preemption behavior
 - realtime slices cutting across `L2`
@@ -326,6 +336,8 @@ Implemented and considered landed:
 - `3-thread` camera-long / microphone-long / general-lane split
 - mode-collapse hard stop of persistent listeners
 - mode-expansion reseed of mode-specific listeners
+- watchdog-based stale-listener recovery
+- runtime counters for reseed / watchdog / realtime slices / average drain ticks
 
 Still active as follow-through work:
 

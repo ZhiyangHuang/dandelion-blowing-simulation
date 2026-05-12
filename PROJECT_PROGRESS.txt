@@ -657,3 +657,28 @@ Practical self-assessment after recovery
   - the project should score much better because it will satisfy both sides of the guideline:
     - implemented mechanism
     - analyzed mechanism
+
+Score-oriented landing status
+- Completed against `Final_Project.md` direction:
+  - live runtime now uses startup-fixed mode selection through `--single`, `--dual`, `--triple`
+  - added a stable `--demo-camera` fallback source so the final scheduler demo can survive camera-bridge failure without rewriting the queue/runtime design
+  - SDL no longer exposes runtime hot switching for thread mode
+  - listener watchdog recovery now clears stale state and reseeds listener tasks after heartbeat timeout
+  - runtime counters now track:
+    - camera reseed count
+    - microphone reseed count
+    - watchdog recovery count
+    - realtime slices per frame
+    - average particle drain ticks
+  - verifier now includes:
+    - watchdog timeout recovery
+    - scripted replay of `mouth open -> blow -> overlap -> reset`
+    - fairness sanity across `L1/L2/L3`
+  - README / DESIGN now expose:
+    - verification matrix
+    - trade-off analysis
+    - performance observations
+    - limitations / future work
+- Remaining reality:
+  - internal scheduler code still contains mode-collapse support used by legacy verifier coverage and development experiments
+  - the main graded demonstration path is now the startup-fixed topology rather than runtime migration

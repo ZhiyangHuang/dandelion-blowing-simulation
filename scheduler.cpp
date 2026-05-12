@@ -50,6 +50,9 @@ struct L1RealtimeDiagnostics {
     std::string blocked_reason = "n/a";
 };
 
+constexpr long long kCameraHeartbeatTimeoutMs = 2000;
+constexpr long long kMicrophoneHeartbeatTimeoutMs = 1600;
+
 int g_next_task_id = 1;
 int g_frame_index = 0;
 int g_thread_mode = 1;
@@ -355,6 +358,7 @@ ListenerServiceDiagnostics build_listener_service_diagnostics(
     diagnostics.short_lease_started_at_ms = listener.short_lease_started_at_ms;
     diagnostics.short_lease_until_ms = listener.short_lease_until_ms;
     diagnostics.short_detect_ready_at_ms = listener.short_detect_ready_at_ms;
+    diagnostics.last_heartbeat_ms = listener.last_heartbeat_ms;
     diagnostics.last_seen_sample_ms = listener.last_seen_sample_ms;
     diagnostics.last_seeded_sample_ms = listener.last_seeded_sample_ms;
     diagnostics.last_consumed_sample_ms = listener.last_consumed_sample_ms;
@@ -372,6 +376,7 @@ ListenerServiceDiagnostics build_listener_service_diagnostics(
     diagnostics.short_lease_started_at_ms = listener.short_lease_started_at_ms;
     diagnostics.short_lease_until_ms = listener.short_lease_until_ms;
     diagnostics.short_detect_ready_at_ms = listener.short_detect_ready_at_ms;
+    diagnostics.last_heartbeat_ms = listener.last_heartbeat_ms;
     diagnostics.last_seen_sample_ms = listener.last_seen_sample_ms;
     diagnostics.last_seeded_sample_ms = listener.last_seeded_sample_ms;
     diagnostics.last_consumed_sample_ms = listener.last_consumed_sample_ms;
@@ -717,6 +722,29 @@ void clear_short_listener_lease(MicrophoneListenerState& listener) {
     listener.short_lease_until_ms = 0;
     listener.short_warmup_until_ms = 0;
     listener.short_detect_ready_at_ms = 0;
+}
+
+void record_camera_reseed() {
+    RuntimeCounters& counters = runtime_state().counters;
+    counters.camera_reseed_count++;
+}
+
+void record_microphone_reseed() {
+    RuntimeCounters& counters = runtime_state().counters;
+    counters.microphone_reseed_count++;
+}
+
+void record_realtime_slice() {
+    RuntimeCounters& counters = runtime_state().counters;
+    counters.realtime_slices_this_frame++;
+}
+
+void finalize_frame_counters() {
+    RuntimeCounters& counters = runtime_state().counters;
+    counters.realtime_slices_last_frame = counters.realtime_slices_this_frame;
+    counters.max_realtime_slices_per_frame = std::max(
+        counters.max_realtime_slices_per_frame,
+        counters.realtime_slices_last_frame);
 }
 
 bool task_eligible_this_frame(const StoredTask& entry) {
@@ -1335,6 +1363,7 @@ void submit_camera_listener_burst_task_with_lease() {
     if (!short_listener_lease_is_active(state_ref.camera_listener)) {
         begin_short_listener_lease(state_ref.camera_listener);
     }
+    record_camera_reseed();
     submit_task(make_camera_listener_burst_task());
 }
 
@@ -1343,6 +1372,7 @@ void submit_microphone_listener_burst_task_with_lease() {
     if (!short_listener_lease_is_active(state_ref.microphone_listener)) {
         begin_short_listener_lease(state_ref.microphone_listener);
     }
+    record_microphone_reseed();
     submit_task(make_microphone_listener_burst_task());
 }
 
@@ -1426,6 +1456,7 @@ void ensure_realtime_listener_service_tasks() {
         !has_queued_task(
             TaskType::CAMERA_LISTENER_SERVICE,
             PriorityLevel::P2_REALTIME)) {
+        record_camera_reseed();
         submit_task(make_camera_listener_service_task());
     }
 
@@ -1433,6 +1464,7 @@ void ensure_realtime_listener_service_tasks() {
         !has_queued_task(
             TaskType::MICROPHONE_LISTENER_SERVICE,
             PriorityLevel::P2_REALTIME)) {
+        record_microphone_reseed();
         submit_task(make_microphone_listener_service_task());
     }
 
@@ -1510,12 +1542,112 @@ void ensure_single_thread_listener_burst_tasks() {
     }
 }
 
+void recover_camera_listener_from_watchdog() {
+    erase_p2_tasks_by_type(TaskType::CAMERA);
+    erase_realtime_tasks_if(
+        [](const StoredTask& entry) {
+            return entry.task && is_camera_task_family(entry.task->type);
+        },
+        "camera watchdog recovery");
+
+    with_shared_state_write(false, false, true, []() {
+        RuntimeState& state_ref = runtime_state();
+        const long long now_ms = current_time_ms();
+        state_ref.camera_listener.sample_ready = false;
+        state_ref.camera_listener.stale = true;
+        state_ref.camera_listener.service_task_alive = false;
+        state_ref.camera_listener.service_task_id = -1;
+        state_ref.camera_listener.consumer_task_queued = false;
+        state_ref.camera_listener.consumer_task_id = -1;
+        state_ref.camera_listener.last_heartbeat_ms = now_ms;
+        state_ref.camera_listener.last_seen_sample_ms = 0;
+        state_ref.camera_listener.last_seeded_sample_ms = 0;
+        state_ref.camera_bridge.sample_ready = false;
+        state_ref.camera_bridge.timestamp_ms = 0;
+        state_ref.camera_bridge.status_text = "camera watchdog recovery pending refresh";
+        state_ref.camera_available = false;
+        state_ref.counters.watchdog_recovery_count++;
+    });
+
+    push_runtime_note(
+        "Watchdog: camera listener heartbeat timed out; cleared stale state and reseeded listener.");
+
+    if (camera_should_use_long_listener_mode()) {
+        record_camera_reseed();
+        submit_task(make_camera_listener_service_task());
+    } else if (camera_should_use_short_listener_mode()) {
+        submit_camera_listener_burst_task_with_lease();
+    }
+}
+
+void recover_microphone_listener_from_watchdog() {
+    erase_p2_tasks_by_type(TaskType::MICROPHONE);
+    erase_realtime_tasks_if(
+        [](const StoredTask& entry) {
+            return entry.task && is_microphone_task_family(entry.task->type);
+        },
+        "microphone watchdog recovery");
+
+    with_shared_state_write(false, false, true, []() {
+        RuntimeState& state_ref = runtime_state();
+        const long long now_ms = current_time_ms();
+        state_ref.microphone_listener.sample_ready = false;
+        state_ref.microphone_listener.stale = true;
+        state_ref.microphone_listener.service_task_alive = false;
+        state_ref.microphone_listener.service_task_id = -1;
+        state_ref.microphone_listener.consumer_task_queued = false;
+        state_ref.microphone_listener.consumer_task_id = -1;
+        state_ref.microphone_listener.last_heartbeat_ms = now_ms;
+        state_ref.microphone_listener.last_seen_sample_ms = 0;
+        state_ref.microphone_listener.last_seeded_sample_ms = 0;
+        state_ref.microphone_bridge.sample_ready = false;
+        state_ref.microphone_bridge.timestamp_ms = 0;
+        state_ref.microphone_bridge.status_text =
+            "microphone watchdog recovery pending refresh";
+        state_ref.microphone_available = false;
+        state_ref.counters.watchdog_recovery_count++;
+    });
+
+    push_runtime_note(
+        "Watchdog: microphone listener heartbeat timed out; cleared stale state and reseeded listener.");
+
+    if (microphone_should_use_long_listener_mode()) {
+        record_microphone_reseed();
+        submit_task(make_microphone_listener_service_task());
+    } else if (microphone_should_use_short_listener_mode()) {
+        submit_microphone_listener_burst_task_with_lease();
+    }
+}
+
+void run_listener_watchdog_recovery_if_needed() {
+    const RuntimeState& state_ref = current_runtime_state();
+    if (state_ref.phase != RuntimePhase::READY) {
+        return;
+    }
+
+    const long long now_ms = current_time_ms();
+    if (state_ref.camera_listener.enabled &&
+        state_ref.camera_listener.last_heartbeat_ms > 0 &&
+        now_ms - state_ref.camera_listener.last_heartbeat_ms >
+            kCameraHeartbeatTimeoutMs) {
+        recover_camera_listener_from_watchdog();
+    }
+
+    if (state_ref.microphone_listener.enabled &&
+        state_ref.microphone_listener.last_heartbeat_ms > 0 &&
+        now_ms - state_ref.microphone_listener.last_heartbeat_ms >
+            kMicrophoneHeartbeatTimeoutMs) {
+        recover_microphone_listener_from_watchdog();
+    }
+}
+
 void run_realtime_service_slice(StoredTask& entry, const char* slice_reason) {
     if (!entry.task) {
         return;
     }
 
     Task& task = *entry.task;
+    record_realtime_slice();
     const bool resume_task =
         task.state == TaskState::REQUEUED || task.state == TaskState::INTERRUPTED;
     mark_task_dispatched(task, g_frame_index, resume_task);
@@ -1777,9 +1909,11 @@ bool seed_input_entry_task_if_idle_impl(const char* reason) {
         }
     } else {
         if (camera_should_use_long_listener_mode()) {
+            record_camera_reseed();
             submit_task(make_camera_listener_service_task());
         }
         if (microphone_should_use_long_listener_mode()) {
+            record_microphone_reseed();
             submit_task(make_microphone_listener_service_task());
         }
         if (state_ref.camera_listener.enabled || state_ref.microphone_listener.enabled) {
@@ -2154,6 +2288,7 @@ int current_thread_mode() {
 
 void scheduler_tick() {
     ++g_frame_index;
+    runtime_state().counters.realtime_slices_this_frame = 0;
     const int active_threads = std::clamp(g_thread_mode, 1, 3);
     int dispatch_slot = 0;
     std::vector<FrameDispatchEntry> frame_dispatches;
@@ -2177,6 +2312,7 @@ void scheduler_tick() {
         }
     }
 
+    run_listener_watchdog_recovery_if_needed();
     ensure_realtime_listener_service_tasks();
     ensure_single_thread_listener_burst_tasks();
     if (g_thread_mode == 1) {
@@ -2198,6 +2334,7 @@ void scheduler_tick() {
     if (!has_pending_tasks()) {
         reconcile_runtime_particle_bookkeeping();
         reconcile_listener_queue_bookkeeping();
+        finalize_frame_counters();
         with_shared_state_write(false, false, true, []() {
             render_data().ui.scheduler_state = "Idle";
         });
@@ -2350,6 +2487,7 @@ void scheduler_tick() {
 
     reconcile_runtime_particle_bookkeeping();
     reconcile_listener_queue_bookkeeping();
+    finalize_frame_counters();
     with_shared_state_write(false, false, true, []() {
         render_data().ui.scheduler_state = has_pending_tasks() ? "Dispatching" : "Idle";
     });
@@ -2409,6 +2547,7 @@ SchedulerSnapshot scheduler_snapshot() {
     snapshot.l1_microphone_lane = l1_diagnostics.microphone_lane;
     snapshot.l1_gate_lane = l1_diagnostics.gate_lane;
     snapshot.l1_blocked_reason = l1_diagnostics.blocked_reason;
+    snapshot.counters = current_runtime_state().counters;
     snapshot.camera_listener_runtime =
         build_listener_service_diagnostics(current_runtime_state().camera_listener);
     snapshot.microphone_listener_runtime =
