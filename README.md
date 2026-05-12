@@ -86,6 +86,9 @@ Docs / verification:
 - `queue_verification.cpp`
 - `queue_verification_output.txt`
 - `demo_io_loop_runtime_log.txt`
+- `demo_single_mode_log.txt`
+- `demo_dual_mode_log.txt`
+- `demo_triple_mode_log.txt`
 
 ## Environment
 
@@ -131,6 +134,22 @@ Or launch a fixed evaluation mode explicitly:
 .\run_live.bat --triple --demo-io-loop --auto-exit-ms 5000 --log-file demo_io_loop_runtime_log.txt
 ```
 
+Mode-specialized runnable demo wrappers:
+
+```powershell
+.\run_demo_single_mode.bat
+.\run_demo_dual_mode.bat
+.\run_demo_triple_mode.bat
+```
+
+Generated runtime logs:
+
+```text
+demo_single_mode_log.txt
+demo_dual_mode_log.txt
+demo_triple_mode_log.txt
+```
+
 Mode intent:
 
 - `--single`: deterministic sequential runtime
@@ -140,6 +159,12 @@ Mode intent:
 - `--demo-io-loop`: replace both live camera and live microphone sources with auto-looping simulated I/O
 - `--auto-exit-ms N`: stop automatically after `N` milliseconds
 - `--log-file PATH`: mirror runtime note output into `PATH`
+
+Mode-specific scheduling signatures in the logs:
+
+- `demo_single_mode_log.txt`: one worker thread repeatedly advances the fixed chain, so camera, microphone, generate, and batch drain work appear as a mostly sequential trace.
+- `demo_dual_mode_log.txt`: two worker threads split interactive work from throughput drain, so camera detection and particle batch requeue activity overlap across `Thread 1` and `Thread 2`.
+- `demo_triple_mode_log.txt`: three worker threads separate camera, microphone, and particle throughput lanes, so the trace shows distinct ownership across `Thread 1`, `Thread 2`, and `Thread 3`.
 
 Recommended final-demo fallback when the live camera stack is flaky:
 
@@ -158,6 +183,21 @@ Recommended log-producing final-demo capture:
 - launch `.\run_live.bat --triple --demo-io-loop --auto-exit-ms 5000 --log-file demo_io_loop_runtime_log.txt`
 - the runtime will loop automatically, stop after five seconds, and leave a text log on disk
 - `demo_io_loop_runtime_log.txt` in this repo is an example capture generated from that path
+
+Three specialized scheduling-simulation versions for the course demo:
+
+- `run_demo_single_mode.bat`
+  - launches `--single --demo-io-loop`
+  - emphasizes deterministic sequential scheduling
+  - generated log: `demo_single_mode_log.txt`
+- `run_demo_dual_mode.bat`
+  - launches `--dual --demo-io-loop`
+  - emphasizes camera-prioritized constrained parallelism
+  - generated log: `demo_dual_mode_log.txt`
+- `run_demo_triple_mode.bat`
+  - launches `--triple --demo-io-loop`
+  - emphasizes fully partitioned listener + throughput execution
+  - generated log: `demo_triple_mode_log.txt`
 
 That script currently builds:
 

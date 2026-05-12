@@ -1,0 +1,1715 @@
+Scheduler: expanded worker mode 1 -> 2
+SDL visualization initialized.
+Thread 1 execute StartTask#1[P1/L0 System/System.StartTask]
+StartTask: runtime bootstrap started.
+Thread 1 finished StartTask#1[P1/L0 System/System.StartTask]
+Thread 2 execute ResetTask#2[P1/L0 System/System.ResetTask]
+ResetTask: clearing P2/P3/P4 queues.
+ResetTask: resetting world state.
+ResetTask: stopping microphone listener.
+ResetTask: stopping camera listener.
+ResetTask: starting camera listener.
+ResetTask: starting microphone listener.
+ResetTask: listeners refreshed -> CAM enabled / MIC enabled
+Scheduler: multi-thread cycle reseeded mode-specific realtime listeners (idle)
+Scheduler: seeded mode-specific short listener lease (reset)
+ResetTask: world reset complete and input entry reseeded.
+Thread 2 finished ResetTask#2[P1/L0 System/System.ResetTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#5[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#5[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Startup: demo I/O loop enabled.
+Startup: auto exit after 4000 ms.
+Startup: runtime log file -> demo_dual_mode_log.txt
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#6[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#6[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#7[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#7[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#8[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#8[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#9[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#9[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#10[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#10[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#11[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#11[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#12[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#12[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#13[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#13[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#14[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#14[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#15[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#15[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#16[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#16[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#17[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#17[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#18[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#18[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#19[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#19[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#20[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#20[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#21[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#21[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#22[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#22[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#23[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#23[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#24[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#24[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#25[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#25[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#26[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#26[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#27[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#27[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#28[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#28[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#29[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#29[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#30[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#30[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#31[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#31[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#32[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#32[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#33[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#33[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#34[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#34[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#35[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#35[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#36[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#36[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#37[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#37[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#38[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#38[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#39[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#39[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#40[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#40[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#41[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#41[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#42[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#42[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#43[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#43[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#44[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#44[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#45[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#45[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#46[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#46[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#47[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#47[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#48[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#48[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#49[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#49[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#50[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#50[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#51[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#51[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#52[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#52[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#53[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#53[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#54[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#54[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#55[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#55[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#56[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#56[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#57[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#57[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#58[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#58[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#59[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#59[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#60[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#60[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#61[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#61[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#62[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#62[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#63[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#63[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#64[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#64[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#65[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#65[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#66[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#66[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#67[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#67[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#68[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#68[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#69[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#69[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#70[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#70[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#71[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#71[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#72[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#72[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#73[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#73[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#74[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#74[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#75[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#75[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#76[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#76[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#77[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#77[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#78[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#78[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#79[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#79[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#80[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#80[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#81[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#81[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#82[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#82[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#83[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#83[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#84[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#84[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#85[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#85[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#86[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#86[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#87[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#87[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#88[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#88[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#89[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#89[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#90[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#90[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#91[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#91[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#92[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#92[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#93[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#93[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#94[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#94[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#95[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#95[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#96[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#96[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#97[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#97[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#98[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#98[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#99[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#99[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#100[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#100[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#101[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#101[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#102[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#102[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#103[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#103[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#104[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#104[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#105[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#105[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#106[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#106[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#107[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#107[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#108[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#108[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#109[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#109[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#110[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#110[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#111[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#111[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#112[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#112[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#113[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#113[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#114[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#114[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#115[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#115[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#116[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#116[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#117[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#117[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#118[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#118[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#119[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#119[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#120[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#120[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#121[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#121[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Thread 1 execute CameraTask#122[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+CameraTask: stage completed.
+Thread 1 finished CameraTask#122[P3/L2 Interactive/HumanBehavior.CameraDetectTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#123[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#123[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#124[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#124[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#125[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#125[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#126[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#126[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#127[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#127[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#128[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#128[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#129[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#129[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#130[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#130[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#131[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#131[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#132[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#132[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#133[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#133[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#134[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#134[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#135[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#135[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#136[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#136[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#137[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#137[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#138[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#138[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute MicrophoneTask#139[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+MicrophoneTask: stage completed.
+Thread 2 finished MicrophoneTask#139[P3/L2 Interactive/HumanBehavior.BlowDetectTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute GenerateParticleTask#140[P3/L2 Interactive/ParticleRoot.ParticleGenerateTask]
+GenerateParticleTask: queued 4 P3 move tasks.
+Thread 2 finished GenerateParticleTask#140[P3/L2 Interactive/ParticleRoot.ParticleGenerateTask]
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 execute BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#144[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#141[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#142[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Realtime slice yielded CameraListenerServiceTask#3[P2/L1 Persistent Listen/HumanBehavior.CameraListenerServiceTask]
+Realtime slice yielded MicrophoneListenerBurstTask#4[P2/L1 Persistent Listen/HumanBehavior.MicrophoneListenerBurstTask]
+Thread 2 resume BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask]
+Batch RR requeued SingleParticleTask#143[P4/L3 Throughput/ParticleRoot.ParticleMoveTask]
+Thread 2 yielded BatchParticleExecutionTask#145[P3/L3 Throughput/ParticleRoot.ParticleBatchTask] -> requeued
+Main: auto-exit timer reached 4000 ms.
+SDL visualization shut down.
