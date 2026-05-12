@@ -1,23 +1,63 @@
+# Build outputs
 *.exe
-package-lock.json
-question.txt
-*.dll
-*.log
+*.out
 *.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.pdb
+*.ilk
+
+# Build directories
+build/
+dist/
+bin/
+obj/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.cache
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Node / package manager leftovers
+node_modules/
+package-lock.json
+
+# Runtime bridge artifacts
 camera_bridge_control.json
 camera_bridge_latest.json
 camera_bridge_latest.tmp
 microphone_bridge_latest.json
 microphone_bridge_latest.tmp
-__pycache__/
-*.pyc
+
+# Generated verifier / runtime outputs
+queue_verification_output.txt
+
+# Local editor / IDE metadata
+.vscode/
+.vs/
+.idea/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Local scratch files
+question.txt
+debug_*.cpp
+
+# Local media / ad-hoc captures
 close_0.jpg
 close_1.jpg
 open_0.jpg
 open_1.jpg
-huu.m4a
-ahh.m4a
-no voice.m4a
-.vscode/
-.vs/
-build/
+*.m4a

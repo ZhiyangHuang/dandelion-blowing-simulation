@@ -1,4 +1,5 @@
 #include "thread.h"
+#include "runtime_orchestration.h"
 #include "scheduler_task_support.h"
 
 #include <algorithm>
@@ -43,26 +44,47 @@ void GenerateParticleTask::execute() {
             const int slot = spawn_slots[static_cast<std::size_t>(index)];
             ParticleRenderData& particle = data.particles[static_cast<std::size_t>(slot)];
             particle.ownership_token++;
-            submit_task(make_single_particle_task(slot, index + 1, particle.ownership_token));
+            submit_task(make_single_particle_task(
+                slot,
+                index + 1,
+                particle.ownership_token,
+                state_ref.world.mouth_x,
+                state_ref.world.mouth_y));
+            particle.visual_alpha = 1.0f;
             particle.active = true;
             particle.attached = false;
+            particle.fade_steps_remaining = 0;
             particle.status = "queued";
             created++;
         }
 
         scheduler_task_support::reconcile_particle_bookkeeping(state_ref, data);
+        runtime_orchestration::advance_particle_root_flow(
+            state_ref,
+            TaskType::GENERATE_PARTICLE,
+            PriorityLevel::P2_FUNCTIONAL,
+            id,
+            OrchestrationNode::PARTICLE_GENERATE,
+            created > 0 ? OrchestrationStatus::HANDOFF : OrchestrationStatus::COMPLETED,
+            created > 0 ? OrchestrationEvent::PARTICLE_GENERATE
+                        : OrchestrationEvent::PARTICLE_GENERATE_EMPTY,
+            created > 0);
         data.ui.generate_task_status =
-            "GENERATE created " + std::to_string(created) + " particle tasks";
+            "GENERATE queued " + std::to_string(created) + " P3 move tasks";
         data.ui.particle_task_status =
-            created > 0 ? "P3 queue populated" : "P3 queue unchanged";
+            created > 0 ? "P3 move queue populated" : "P3 move queue unchanged";
     });
 
     if (created > 0) {
         scheduler_task_support::queue_batch_stage_if_needed();
     }
     push_runtime_note(
-        "GenerateParticleTask: queued " + std::to_string(created) + " particle task records.");
+        "GenerateParticleTask: queued " + std::to_string(created) + " P3 move tasks.");
     state = TaskState::FINISHED;
+}
+
+std::unique_ptr<Task> GenerateParticleTask::clone_for_requeue() const {
+    return std::make_unique<GenerateParticleTask>(*this);
 }
 
 std::unique_ptr<Task> make_generate_particle_task() {

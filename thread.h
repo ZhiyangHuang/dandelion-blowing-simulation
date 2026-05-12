@@ -25,6 +25,7 @@ enum class TaskState {
 
 enum class PriorityLevel {
     P1_SYSTEM,
+    P2_REALTIME,
     P2_FUNCTIONAL,
     P3_PARTICLE
 };
@@ -32,6 +33,10 @@ enum class PriorityLevel {
 enum class TaskType {
     START,
     RESET,
+    CAMERA_LISTENER_SERVICE,
+    MICROPHONE_LISTENER_SERVICE,
+    CAMERA_LISTENER_BURST,
+    MICROPHONE_LISTENER_BURST,
     CAMERA,
     MICROPHONE,
     GENERATE_PARTICLE,
@@ -39,8 +44,10 @@ enum class TaskType {
     CHANGE_DANDELION,
     BATCH_PARTICLE_EXECUTION,
     SINGLE_PARTICLE,
+    FADE_PARTICLE,
     EXIT_APP,
-    PLACEHOLDER
+    PLACEHOLDER,
+    NONE
 };
 
 enum class RuntimePhase {
@@ -51,14 +58,72 @@ enum class RuntimePhase {
     SHUTTING_DOWN
 };
 
+enum class OrchestrationNode {
+    IDLE,
+    CAMERA_DETECT,
+    BLOW_DETECT,
+    PARTICLE_GENERATE,
+    PARTICLE_BATCH,
+    PARTICLE_MOVE,
+    PARTICLE_FADE,
+    CHANGE_DANDELION
+};
+
+enum class OrchestrationStatus {
+    IDLE,
+    WAITING,
+    ACTIVE,
+    HANDOFF,
+    FALLBACK,
+    DRAINED,
+    COMPLETED,
+    BLOCKED,
+    ERROR_STATE
+};
+
+enum class OrchestrationEvent {
+    NONE,
+    CAMERA_DEVICE_WAIT,
+    CAMERA_MOUTH_WAIT,
+    CAMERA_GATE_HOLD,
+    CAMERA_DEVICE_UNAVAILABLE,
+    MOUTH_OPEN,
+    MICROPHONE_DEVICE_UNAVAILABLE,
+    MICROPHONE_DEVICE_WAIT,
+    MICROPHONE_BRIDGE_DISCONNECTED,
+    MICROPHONE_SAMPLE_WAIT,
+    MICROPHONE_GATE_WAIT,
+    MICROPHONE_SAMPLE_STALE,
+    VOICE_WAIT,
+    BLOW_FALLBACK,
+    BLOW_DETECTED,
+    PARTICLE_GENERATE,
+    PARTICLE_GENERATE_EMPTY,
+    PARTICLE_BATCH_TICK,
+    PARTICLE_BATCH_HANDOFF,
+    PARTICLE_STAGE_DRAINED,
+    PARTICLE_MOVE_EXECUTE,
+    PARTICLE_MOVE_BOUNDARY_STOP,
+    PARTICLE_MOVE_LOST_SLOT,
+    PARTICLE_MOVE_LOST_OWNERSHIP,
+    PARTICLE_FADE_EXECUTE,
+    PARTICLE_FADE_FINISHED,
+    PARTICLE_FADE_EMPTY,
+    PARTICLE_FADE_LOST_SLOT,
+    PARTICLE_FADE_LOST_OWNERSHIP,
+    CHANGE_DANDELION
+};
+
 struct ParticleRenderData {
     int id = 0;
     float x = 0.0f;
     float y = 0.0f;
+    float visual_alpha = 1.0f;
     bool attached = true;
     bool active = false;
     int ownership_token = 0;
     int source_task_id = -1;
+    int fade_steps_remaining = 0;
     std::string status = "idle";
 };
 
@@ -113,11 +178,17 @@ struct RuntimeThread {
     std::string label;
     int bound_task_id = -1;
     std::string bound_task_name = "none";
+    TaskType bound_task_type = TaskType::NONE;
+    PriorityLevel bound_task_priority = PriorityLevel::P2_FUNCTIONAL;
     int dispatch_count = 0;
     int last_completed_task_id = -1;
     std::string last_completed_task_name = "none";
+    TaskType last_completed_task_type = TaskType::NONE;
+    PriorityLevel last_completed_task_priority = PriorityLevel::P2_FUNCTIONAL;
     std::string last_task_event = "idle";
     std::string last_task_transition = "created";
+    TaskType pinned_task_type = TaskType::NONE;
+    bool is_pinned = false;
 };
 
 struct TaskRecord {
@@ -140,15 +211,61 @@ struct TaskRecord {
     std::string last_transition = "created";
 };
 
+struct OrchestrationRecord {
+    std::string name = "Flow";
+    bool active = false;
+    OrchestrationNode current_node = OrchestrationNode::IDLE;
+    OrchestrationStatus current_status = OrchestrationStatus::IDLE;
+    OrchestrationEvent last_event = OrchestrationEvent::NONE;
+    TaskType current_leaf_type = TaskType::NONE;
+    PriorityLevel current_leaf_priority = PriorityLevel::P2_FUNCTIONAL;
+    int current_leaf_id = -1;
+    int last_updated_frame = 0;
+};
+
+struct ListenerServiceDiagnostics {
+    bool service_task_alive = false;
+    int service_task_id = -1;
+    bool consumer_task_queued = false;
+    int consumer_task_id = -1;
+    bool short_lease_active = false;
+    long long short_lease_started_at_ms = 0;
+    long long short_lease_until_ms = 0;
+    long long short_detect_ready_at_ms = 0;
+    long long last_seen_sample_ms = 0;
+    long long last_seeded_sample_ms = 0;
+    long long last_consumed_sample_ms = 0;
+};
+
 struct SchedulerSnapshot {
     int frame_index = 0;
     int thread_mode = 1;
     bool visualization_enabled = false;
     bool shutdown_requested = false;
+    bool single_thread_chain_active = false;
+    bool l1_realtime_active = false;
     int remaining_particles = 100;
     float power = 0.1f;
+    int p3_move_queued = 0;
+    int p3_fade_queued = 0;
+    int p3_move_running = 0;
+    int p3_fade_running = 0;
+    std::string single_thread_chain_path =
+        "CameraBurst -> Camera -> MicrophoneBurst -> Microphone -> Generate/Breeze -> Batch -> P3 RR -> drain -> CameraBurst";
+    std::string single_thread_chain_current = "n/a";
+    std::string single_thread_chain_next = "n/a";
+    std::string single_thread_chain_status = "n/a";
+    std::string l1_camera_lane = "n/a";
+    std::string l1_microphone_lane = "n/a";
+    std::string l1_gate_lane = "n/a";
+    std::string l1_blocked_reason = "n/a";
+    ListenerServiceDiagnostics camera_listener_runtime;
+    ListenerServiceDiagnostics microphone_listener_runtime;
+    OrchestrationRecord human_behavior_flow;
+    OrchestrationRecord particle_root_flow;
     std::vector<RuntimeThread> threads;
     std::vector<TaskRecord> p1_queue;
+    std::vector<TaskRecord> p2_realtime_queue;
     std::vector<TaskRecord> p2_queue;
     std::vector<TaskRecord> p3_queue;
 };
@@ -195,6 +312,50 @@ struct MicrophoneBridgeState {
     std::string status_text = "microphone bridge idle";
 };
 
+struct CameraListenerState {
+    bool enabled = false;
+    bool bridge_running = false;
+    bool device_available = false;
+    bool sample_ready = false;
+    bool stale = true;
+    bool unavailable = false;
+    long long started_at_ms = 0;
+    long long first_mouth_seen_at_ms = 0;
+    bool service_task_alive = false;
+    int service_task_id = -1;
+    bool consumer_task_queued = false;
+    int consumer_task_id = -1;
+    bool short_lease_active = false;
+    long long short_lease_started_at_ms = 0;
+    long long short_lease_until_ms = 0;
+    long long short_warmup_until_ms = 0;
+    long long short_detect_ready_at_ms = 0;
+    long long last_seen_sample_ms = 0;
+    long long last_seeded_sample_ms = 0;
+    long long last_consumed_sample_ms = 0;
+};
+
+struct MicrophoneListenerState {
+    bool enabled = false;
+    bool bridge_running = false;
+    bool device_available = false;
+    bool sample_ready = false;
+    bool stale = true;
+    bool unavailable = false;
+    bool service_task_alive = false;
+    int service_task_id = -1;
+    bool consumer_task_queued = false;
+    int consumer_task_id = -1;
+    bool short_lease_active = false;
+    long long short_lease_started_at_ms = 0;
+    long long short_lease_until_ms = 0;
+    long long short_warmup_until_ms = 0;
+    long long short_detect_ready_at_ms = 0;
+    long long last_seen_sample_ms = 0;
+    long long last_seeded_sample_ms = 0;
+    long long last_consumed_sample_ms = 0;
+};
+
 struct RuntimeState {
     RuntimePhase phase = RuntimePhase::BOOTSTRAP;
     bool shutdown_requested = false;
@@ -211,6 +372,10 @@ struct RuntimeState {
     long long microphone_focus_until_ms = 0;
     long long last_consumed_microphone_sample_ms = 0;
     SharedWorldState world;
+    OrchestrationRecord human_behavior_flow{"HumanBehaviorTask"};
+    OrchestrationRecord particle_root_flow{"ParticleRootTask"};
+    CameraListenerState camera_listener;
+    MicrophoneListenerState microphone_listener;
     CameraBridgeState camera_bridge;
     MicrophoneBridgeState microphone_bridge;
 };
@@ -227,6 +392,7 @@ struct Task {
     int id = 0;
     TaskType type = TaskType::PLACEHOLDER;
     PriorityLevel priority = PriorityLevel::P2_FUNCTIONAL;
+    int realtime_order = 0;
     TaskState state = TaskState::CREATED;
     bool support_resume = false;
     std::string name;
@@ -245,6 +411,7 @@ struct Task {
     virtual ~Task() = default;
     virtual void execute() = 0;
     virtual void resume() { execute(); }
+    virtual std::unique_ptr<Task> clone_for_requeue() const = 0;
 };
 
 class PlaceholderTask final : public Task {
@@ -255,24 +422,72 @@ public:
                     bool resumable = false);
 
     void execute() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
 };
 
 class StartTask final : public Task {
 public:
     StartTask();
     void execute() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
 };
 
 class ResetTask final : public Task {
 public:
     ResetTask();
     void execute() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
 };
 
 class ExitTask final : public Task {
 public:
     ExitTask();
     void execute() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
+};
+
+class CameraListenerServiceTask final : public Task {
+public:
+    CameraListenerServiceTask();
+    void execute() override;
+    void resume() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
+
+private:
+    void run_cycle(bool resumed);
+};
+
+class MicrophoneListenerServiceTask final : public Task {
+public:
+    MicrophoneListenerServiceTask();
+    void execute() override;
+    void resume() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
+
+private:
+    void run_cycle(bool resumed);
+};
+
+class CameraListenerBurstTask final : public Task {
+public:
+    CameraListenerBurstTask();
+    void execute() override;
+    void resume() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
+
+private:
+    void run_cycle(bool resumed);
+};
+
+class MicrophoneListenerBurstTask final : public Task {
+public:
+    MicrophoneListenerBurstTask();
+    void execute() override;
+    void resume() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
+
+private:
+    void run_cycle(bool resumed);
 };
 
 class CameraTask final : public Task {
@@ -280,6 +495,7 @@ public:
     CameraTask();
     void execute() override;
     void resume() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
 
 private:
     void run_cycle(bool resumed);
@@ -292,6 +508,7 @@ public:
     MicrophoneTask();
     void execute() override;
     void resume() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
 
 private:
     void run_cycle(bool resumed);
@@ -303,6 +520,7 @@ class GenerateParticleTask final : public Task {
 public:
     GenerateParticleTask();
     void execute() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
 
 private:
     int compute_spawn_count(float power) const;
@@ -312,12 +530,14 @@ class BreezeTask final : public Task {
 public:
     BreezeTask();
     void execute() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
 };
 
 class ChangeDandelionTask final : public Task {
 public:
     ChangeDandelionTask();
     void execute() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
 };
 
 class BatchParticleExecutionTask final : public Task {
@@ -325,20 +545,27 @@ public:
     BatchParticleExecutionTask();
     void execute() override;
     void resume() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
 
 private:
     void run_cycle(bool resumed);
 
     int tick_count_ = 0;
-    int decay_accumulator_ms_ = 0;
+    long long decay_accumulator_ms_ = 0;
+    long long last_decay_timestamp_ms_ = 0;
     bool started_ = false;
 };
 
 class SingleParticleTask final : public Task {
 public:
-    SingleParticleTask(int particle_slot, int generation_index, int ownership_token);
+    SingleParticleTask(int particle_slot,
+                       int generation_index,
+                       int ownership_token,
+                       float mouth_x,
+                       float mouth_y);
     void execute() override;
     void resume() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
 
 private:
     void run_cycle(bool resumed);
@@ -349,11 +576,29 @@ private:
     int cycle_count_ = 0;
     bool initialized_ = false;
     bool completed_ = false;
+    float mouth_x_ = 0.5f;
+    float mouth_y_ = 0.5f;
     float x_ = 0.0f;
     float y_ = 0.0f;
     float dir_x_ = 0.0f;
     float dir_y_ = 0.0f;
     float distance_per_tick_ = 0.0f;
+};
+
+class ParticleFadeTask final : public Task {
+public:
+    ParticleFadeTask(int particle_slot, int ownership_token);
+    void execute() override;
+    void resume() override;
+    std::unique_ptr<Task> clone_for_requeue() const override;
+
+private:
+    void run_cycle(bool resumed);
+
+    int particle_slot_ = 0;
+    int ownership_token_ = 0;
+    int cycle_count_ = 0;
+    bool completed_ = false;
 };
 
 void bootstrap_runtime();
@@ -370,6 +615,10 @@ std::unique_ptr<Task> make_placeholder_task(TaskType type,
 std::unique_ptr<Task> make_start_task();
 std::unique_ptr<Task> make_reset_task();
 std::unique_ptr<Task> make_exit_task();
+std::unique_ptr<Task> make_camera_listener_service_task();
+std::unique_ptr<Task> make_microphone_listener_service_task();
+std::unique_ptr<Task> make_camera_listener_burst_task();
+std::unique_ptr<Task> make_microphone_listener_burst_task();
 std::unique_ptr<Task> make_camera_task();
 std::unique_ptr<Task> make_microphone_task();
 std::unique_ptr<Task> make_generate_particle_task();
@@ -378,16 +627,36 @@ std::unique_ptr<Task> make_change_dandelion_task();
 std::unique_ptr<Task> make_batch_particle_execution_task();
 std::unique_ptr<Task> make_single_particle_task(int particle_slot,
                                                 int generation_index,
-                                                int ownership_token = 0);
+                                                int ownership_token = 0,
+                                                float mouth_x = 0.5f,
+                                                float mouth_y = 0.5f);
+std::unique_ptr<Task> make_particle_fade_task(int particle_slot,
+                                              int ownership_token = 0);
 
 void set_thread_mode(int mode);
 int current_thread_mode();
 
 const std::vector<RuntimeThread>& runtime_threads();
 const std::vector<TaskRecord>& queued_p1_tasks();
+const std::vector<TaskRecord>& queued_p2_realtime_tasks();
 const std::vector<TaskRecord>& queued_p2_tasks();
 const std::vector<TaskRecord>& queued_p3_tasks();
 SchedulerSnapshot scheduler_snapshot();
+const char* scheduler_queue_label(PriorityLevel priority);
+const char* latency_class_label_for_task(TaskType type, PriorityLevel priority);
+const char* task_tree_node_label_for_task(TaskType type);
+const char* orchestration_node_label(OrchestrationNode node);
+const char* orchestration_status_label(OrchestrationStatus status);
+const char* orchestration_event_label(OrchestrationEvent event);
+void set_orchestration_record(OrchestrationRecord& record,
+                              bool active,
+                              OrchestrationNode node,
+                              OrchestrationStatus status,
+                              OrchestrationEvent event,
+                              TaskType leaf_type,
+                              PriorityLevel leaf_priority,
+                              int leaf_id,
+                              int frame_index);
 
 RenderData& render_data();
 const RenderData& current_render_data();

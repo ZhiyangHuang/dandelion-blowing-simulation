@@ -1,4 +1,5 @@
 #include "thread.h"
+#include "scheduler_task_support.h"
 #include <SDL.h>
 #include <algorithm>
 #include <array>
@@ -11,7 +12,7 @@ namespace {
 
 constexpr int kWindowWidth = 1360;
 constexpr int kWindowHeight = 820;
-constexpr int kWorldWidthPercent = 68;
+constexpr int kWorldWidthPercent = 75;
 
 constexpr SDL_Color kSkyTop{121, 196, 255, 255};
 constexpr SDL_Color kSkyBottom{209, 236, 255, 255};
@@ -206,16 +207,23 @@ SDL_Color thread_state_color(ThreadState state) {
 }
 
 SDL_Color particle_color(const ParticleRenderData& particle) {
+    const Uint8 alpha = static_cast<Uint8>(
+        std::clamp(particle.visual_alpha, 0.0f, 1.0f) * 255.0f);
     if (particle.status == "particle-cleaned") {
-        return kParticleCleaned;
+        return SDL_Color{kParticleCleaned.r, kParticleCleaned.g, kParticleCleaned.b, alpha};
     }
-    if (particle.status == "particle-boundary-stop") {
-        return kParticleBoundary;
+    if (particle.status == "particle-boundary-stop" ||
+        particle.status == "particle-fade-pending" ||
+        particle.status == "particle-fading" ||
+        particle.status == "particle-fade-queued" ||
+        particle.status == "particle-fade-execute" ||
+        particle.status == "particle-fade-resume") {
+        return SDL_Color{kParticleBoundary.r, kParticleBoundary.g, kParticleBoundary.b, alpha};
     }
     if (!particle.attached) {
-        return kParticleFlying;
+        return SDL_Color{kParticleFlying.r, kParticleFlying.g, kParticleFlying.b, alpha};
     }
-    return kParticleAttached;
+    return SDL_Color{kParticleAttached.r, kParticleAttached.g, kParticleAttached.b, alpha};
 }
 
 bool is_resident_p2_type(TaskType type) {
@@ -227,6 +235,98 @@ bool is_resident_p2_type(TaskType type) {
     default:
         return false;
     }
+}
+
+std::string crop_text(const std::string& text, int max_chars) {
+    if (max_chars <= 0 || static_cast<int>(text.size()) <= max_chars) {
+        return text;
+    }
+    if (max_chars <= 3) {
+        return text.substr(0, static_cast<std::size_t>(max_chars));
+    }
+    return text.substr(0, static_cast<std::size_t>(max_chars - 3)) + "...";
+}
+
+const TaskRecord* next_queue_record(const std::vector<TaskRecord>& queue,
+                                    PriorityLevel priority) {
+    if (queue.empty()) {
+        return nullptr;
+    }
+    if (priority == PriorityLevel::P1_SYSTEM) {
+        return &queue.back();
+    }
+    return &queue.front();
+}
+
+const TaskRecord* next_queue_record_for_type(const std::vector<TaskRecord>& queue,
+                                             TaskType type) {
+    for (const TaskRecord& record : queue) {
+        if (record.type == type) {
+            return &record;
+        }
+    }
+    return nullptr;
+}
+
+std::string task_semantic_summary(TaskType type, PriorityLevel priority) {
+    return std::string(scheduler_queue_label(priority)) +
+        " / " + latency_class_label_for_task(type, priority) +
+        " / " + task_tree_node_label_for_task(type);
+}
+
+std::string queue_record_summary(const TaskRecord& record) {
+    return task_semantic_summary(record.type, record.priority) +
+        " #" + std::to_string(record.id);
+}
+
+std::string orchestration_headline(const OrchestrationRecord& record) {
+    return record.name + std::string(record.active ? " ACTIVE" : " IDLE") +
+        " / " + orchestration_node_label(record.current_node);
+}
+
+std::string orchestration_detail(const OrchestrationRecord& record) {
+    std::string leaf = record.current_leaf_id >= 0
+        ? (std::string(task_tree_node_label_for_task(record.current_leaf_type)) +
+           " #" + std::to_string(record.current_leaf_id))
+        : "idle";
+    return std::string("ST ") + orchestration_status_label(record.current_status) +
+        " / EV " + orchestration_event_label(record.last_event) +
+        " / LEAF " + leaf;
+}
+
+std::string thread_role_label(const RuntimeThread& thread) {
+    if (!thread.is_pinned) {
+        return "ROLE shared-lane";
+    }
+    if (thread.pinned_task_type == TaskType::CAMERA) {
+        return "ROLE camera-lane";
+    }
+    if (thread.pinned_task_type == TaskType::MICROPHONE) {
+        return "ROLE microphone-lane";
+    }
+    return "ROLE general-lane";
+}
+
+std::string thread_active_semantic_line(const RuntimeThread& thread) {
+    if (thread.bound_task_id < 0 || thread.bound_task_type == TaskType::NONE) {
+        return "NODE idle";
+    }
+    return std::string(latency_class_label_for_task(
+        thread.bound_task_type,
+        thread.bound_task_priority)) +
+        " / " + task_tree_node_label_for_task(thread.bound_task_type);
+}
+
+std::string thread_last_semantic_line(const RuntimeThread& thread) {
+    if (thread.last_completed_task_id < 0 ||
+        thread.last_completed_task_type == TaskType::NONE) {
+        return "LAST idle";
+    }
+    return std::string("LAST ") +
+        latency_class_label_for_task(
+            thread.last_completed_task_type,
+            thread.last_completed_task_priority) +
+        " / " + task_tree_node_label_for_task(thread.last_completed_task_type);
 }
 
 std::string thread_state_label(ThreadState state) {
@@ -263,16 +363,99 @@ std::string mouth_label(const RuntimeState& state) {
 }
 
 SDL_Color focus_color(const RenderData& data) {
-    if (data.ui.input_focus_status == "CAMERA FOCUS") {
+    if (data.ui.input_focus_status == "CAMERA FOCUS" ||
+        data.ui.input_focus_status == "CAMERA WINDOW") {
         return kThreadIdle;
     }
-    if (data.ui.input_focus_status == "MIC FOCUS") {
+    if (data.ui.input_focus_status == "MIC FOCUS" ||
+        data.ui.input_focus_status == "MIC WINDOW") {
         return kWindActive;
     }
     if (data.ui.input_focus_status == "GATE OPEN") {
         return kMouthOpen;
     }
     return kMutedTextColor;
+}
+
+SDL_Color listener_lane_color(bool enabled,
+                              bool unavailable,
+                              bool sample_ready,
+                              bool stale,
+                              bool active_signal) {
+    if (!enabled) {
+        return kMutedTextColor;
+    }
+    if (unavailable) {
+        return kParticleBoundary;
+    }
+    if (active_signal) {
+        return kMouthOpen;
+    }
+    if (sample_ready && !stale) {
+        return kWindActive;
+    }
+    if (sample_ready && stale) {
+        return kThreadWait;
+    }
+    return kThreadIdle;
+}
+
+std::string camera_listener_lane_detail(const RuntimeState& state) {
+    const CameraListenerState& listener = state.camera_listener;
+    std::string device = listener.unavailable
+        ? "device-down"
+        : (listener.device_available ? "device-up" : "device-wait");
+    std::string sample = listener.sample_ready
+        ? (listener.stale ? "sample-stale" : "sample-hot")
+        : "sample-empty";
+    std::string stage = state.camera_available
+        ? "mouth-ready"
+        : (state.camera_device_available ? "scan-mouth" : "boot");
+    return std::string(listener.bridge_running ? "bridge-on" : "bridge-off") +
+        " / " + device + " / " + sample + " / " + stage;
+}
+
+std::string microphone_listener_lane_detail(const RuntimeState& state) {
+    const MicrophoneListenerState& listener = state.microphone_listener;
+    std::string device = listener.unavailable
+        ? "device-down"
+        : (listener.device_available ? "device-up" : "device-wait");
+    std::string sample = listener.sample_ready
+        ? (listener.stale ? "sample-stale" : "sample-hot")
+        : "sample-empty";
+    std::string mode = state.microphone_bridge.voice_detected
+        ? "voice-live"
+        : (state.microphone_bridge.fallback_requested ? "breath-live" : "listen");
+    return std::string(listener.bridge_running ? "bridge-on" : "bridge-off") +
+        " / " + device + " / " + sample + " / " + mode;
+}
+
+std::string listener_service_status_line(const ListenerServiceDiagnostics& diagnostics) {
+    std::string line = std::string("SRV ") +
+        (diagnostics.service_task_alive ? "alive" : "absent") +
+        " #" + std::to_string(diagnostics.service_task_id) +
+        " / L2 " + (diagnostics.consumer_task_queued ? "queued" : "idle") +
+        " #" + std::to_string(diagnostics.consumer_task_id);
+    if (diagnostics.short_lease_active) {
+        const long long now_ms = scheduler_task_support::current_time_ms();
+        const long long remaining_ms =
+            diagnostics.short_lease_until_ms > now_ms
+                ? diagnostics.short_lease_until_ms - now_ms
+                : 0;
+        const long long detect_ready_ms =
+            diagnostics.short_detect_ready_at_ms > now_ms
+                ? diagnostics.short_detect_ready_at_ms - now_ms
+                : 0;
+        line += " / SHORT " + std::to_string(remaining_ms) + "ms";
+        line += " / READY " + std::to_string(detect_ready_ms) + "ms";
+    }
+    return line;
+}
+
+std::string listener_sample_line(const ListenerServiceDiagnostics& diagnostics) {
+    return "SEEN " + std::to_string(diagnostics.last_seen_sample_ms) +
+        " / SEED " + std::to_string(diagnostics.last_seeded_sample_ms) +
+        " / USED " + std::to_string(diagnostics.last_consumed_sample_ms);
 }
 
 void submit_visual_hotkey_task(SDL_Keycode key) {
@@ -505,13 +688,19 @@ void render_status_panel(const RuntimeState& state,
     y += 18;
     const SDL_Rect queue_bar = make_rect(panel_x + padding, y, panel_w - padding * 2, 18);
     fill_rect(queue_bar, SDL_Color{45, 55, 67, 255});
-    const int total = static_cast<int>(snapshot.p1_queue.size() + snapshot.p2_queue.size() + snapshot.p3_queue.size());
+    const int total = static_cast<int>(
+        snapshot.p1_queue.size() +
+        snapshot.p2_realtime_queue.size() +
+        snapshot.p2_queue.size() +
+        snapshot.p3_queue.size());
     const int p1w = total == 0 ? 0 : queue_bar.w * static_cast<int>(snapshot.p1_queue.size()) / total;
+    const int p2rtw = total == 0 ? 0 : queue_bar.w * static_cast<int>(snapshot.p2_realtime_queue.size()) / total;
     const int p2w = total == 0 ? 0 : queue_bar.w * static_cast<int>(snapshot.p2_queue.size()) / total;
-    const int p3w = total == 0 ? 0 : queue_bar.w - p1w - p2w;
+    const int p3w = total == 0 ? 0 : queue_bar.w - p1w - p2rtw - p2w;
     fill_rect(make_rect(queue_bar.x, queue_bar.y, p1w, queue_bar.h), SDL_Color{249, 114, 114, 255});
-    fill_rect(make_rect(queue_bar.x + p1w, queue_bar.y, p2w, queue_bar.h), SDL_Color{109, 172, 255, 255});
-    fill_rect(make_rect(queue_bar.x + p1w + p2w, queue_bar.y, p3w, queue_bar.h), SDL_Color{255, 207, 92, 255});
+    fill_rect(make_rect(queue_bar.x + p1w, queue_bar.y, p2rtw, queue_bar.h), SDL_Color{104, 221, 184, 255});
+    fill_rect(make_rect(queue_bar.x + p1w + p2rtw, queue_bar.y, p2w, queue_bar.h), SDL_Color{109, 172, 255, 255});
+    fill_rect(make_rect(queue_bar.x + p1w + p2rtw + p2w, queue_bar.y, p3w, queue_bar.h), SDL_Color{255, 207, 92, 255});
     y += 26;
     int resident_p2 = 0;
     int event_p2 = 0;
@@ -524,109 +713,317 @@ void render_status_panel(const RuntimeState& state,
     }
     draw_text(panel_x + padding, y, "P1 " + std::to_string(snapshot.p1_queue.size()), kMutedTextColor);
     draw_text(panel_x + padding + 90, y,
-        "P2 " + std::to_string(snapshot.p2_queue.size()) +
+        "P2 " + std::to_string(snapshot.p2_realtime_queue.size()),
+        kMutedTextColor);
+    draw_text(panel_x + padding + 170, y,
+        "P3 " + std::to_string(snapshot.p2_queue.size()) +
         " R" + std::to_string(resident_p2) +
         " E" + std::to_string(event_p2),
         kMutedTextColor);
-    draw_text(panel_x + padding + 180, y, "P3 " + std::to_string(snapshot.p3_queue.size()), kMutedTextColor);
-    y += 34;
-
-    draw_text(panel_x + padding, y, "DEVICE", kTextColor);
+    draw_text(
+        panel_x + padding + 300,
+        y,
+        "P4 " + std::to_string(snapshot.p3_queue.size()) +
+            " M" + std::to_string(snapshot.p3_move_queued + snapshot.p3_move_running) +
+            " F" + std::to_string(snapshot.p3_fade_queued + snapshot.p3_fade_running),
+        kMutedTextColor);
     y += 22;
-    draw_text(panel_x + padding, y, "FACE " + std::string(state.camera_bridge.face_detected ? "YES" : "NO"), kMutedTextColor);
-    y += 20;
-    draw_text(panel_x + padding, y, "MOUTH " + mouth_label(state), state.camera_bridge.mouth_open_state ? kMouthOpen : kMutedTextColor);
-    y += 20;
-    draw_text(panel_x + padding, y, "MIC " + microphone_mode_label(state), state.microphone_bridge.voice_detected ? kWindActive : kMutedTextColor);
-    y += 20;
-    draw_text(panel_x + padding, y, "FOCUS " + data.ui.input_focus_status, focus_color(data));
-    y += 20;
-    draw_text(panel_x + padding, y, "POWER " + std::to_string(static_cast<int>(data.ui.power * 100.0f) / 100.0f), kMutedTextColor);
-    y += 32;
+    const int semantic_chars = std::max(12, (panel_w - padding * 2) / (kGlyphAdvance * kFontScale));
+    draw_text(panel_x + padding, y, "MAP P1/L0  P2/L1  P3/L2  P4/L3", kMutedTextColor);
+    y += 18;
+    if (const TaskRecord* record = next_queue_record(snapshot.p1_queue, PriorityLevel::P1_SYSTEM)) {
+        draw_text(panel_x + padding, y, crop_text("NEXT " + queue_record_summary(*record), semantic_chars), kMutedTextColor);
+        y += 18;
+    }
+    if (const TaskRecord* record = next_queue_record(snapshot.p2_realtime_queue, PriorityLevel::P2_REALTIME)) {
+        draw_text(panel_x + padding, y, crop_text("NEXT " + queue_record_summary(*record), semantic_chars), kMutedTextColor);
+        y += 18;
+    }
+    if (const TaskRecord* record = next_queue_record(snapshot.p2_queue, PriorityLevel::P2_FUNCTIONAL)) {
+        draw_text(panel_x + padding, y, crop_text("NEXT " + queue_record_summary(*record), semantic_chars), kMutedTextColor);
+        y += 18;
+    }
+    if (const TaskRecord* record = next_queue_record(snapshot.p3_queue, PriorityLevel::P3_PARTICLE)) {
+        draw_text(panel_x + padding, y, crop_text("NEXT " + queue_record_summary(*record), semantic_chars), kMutedTextColor);
+        y += 18;
+    }
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(
+            "P3 MOVE q" + std::to_string(snapshot.p3_move_queued) +
+                " r" + std::to_string(snapshot.p3_move_running) +
+                " / FADE q" + std::to_string(snapshot.p3_fade_queued) +
+                " r" + std::to_string(snapshot.p3_fade_running),
+            semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    if (const TaskRecord* record = next_queue_record_for_type(snapshot.p3_queue, TaskType::SINGLE_PARTICLE)) {
+        draw_text(panel_x + padding, y, crop_text("MOVE " + queue_record_summary(*record), semantic_chars), kMutedTextColor);
+        y += 18;
+    }
+    if (const TaskRecord* record = next_queue_record_for_type(snapshot.p3_queue, TaskType::FADE_PARTICLE)) {
+        draw_text(panel_x + padding, y, crop_text("FADE " + queue_record_summary(*record), semantic_chars), kMutedTextColor);
+        y += 18;
+    }
+    y += 16;
 
-    draw_text(panel_x + padding, y, "WIND", kTextColor);
+    draw_text(panel_x + padding, y, "L1 REALTIME LANES", kTextColor);
+    y += 18;
+    draw_text(panel_x + padding, y, crop_text("CAM listener-lane", semantic_chars), kTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(camera_listener_lane_detail(state), semantic_chars),
+        listener_lane_color(
+            state.camera_listener.enabled,
+            state.camera_listener.unavailable,
+            state.camera_listener.sample_ready,
+            state.camera_listener.stale,
+            state.camera_available));
     y += 20;
-    const SDL_Rect power_bar = make_rect(panel_x + padding, y, panel_w - padding * 2, 20);
-    fill_rect(power_bar, SDL_Color{45, 55, 67, 255});
-    fill_rect(
-        make_rect(power_bar.x, power_bar.y, static_cast<int>(power_bar.w * std::clamp(data.ui.power / 5.0f, 0.0f, 1.0f)), power_bar.h),
-        data.wind_layer.active ? kWindActive : kWindIdle);
-    y += 34;
+    draw_text(panel_x + padding, y, crop_text("MIC listener-lane", semantic_chars), kTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(microphone_listener_lane_detail(state), semantic_chars),
+        listener_lane_color(
+            state.microphone_listener.enabled,
+            state.microphone_listener.unavailable,
+            state.microphone_listener.sample_ready,
+            state.microphone_listener.stale,
+            state.microphone_available || state.microphone_bridge.voice_detected ||
+                state.microphone_bridge.fallback_requested));
+    y += 26;
+
+    draw_text(panel_x + padding, y, "L1 REALTIME DIAGNOSTICS", kTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(snapshot.l1_camera_lane, semantic_chars),
+        snapshot.l1_realtime_active ? kMutedTextColor : kThreadIdle);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(listener_service_status_line(snapshot.camera_listener_runtime), semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(listener_sample_line(snapshot.camera_listener_runtime), semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(snapshot.l1_microphone_lane, semantic_chars),
+        snapshot.l1_realtime_active ? kMutedTextColor : kThreadIdle);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(listener_service_status_line(snapshot.microphone_listener_runtime), semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(listener_sample_line(snapshot.microphone_listener_runtime), semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(snapshot.l1_gate_lane, semantic_chars),
+        snapshot.l1_realtime_active ? kMutedTextColor : kThreadIdle);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text("BLOCKED " + snapshot.l1_blocked_reason, semantic_chars),
+        snapshot.l1_realtime_active ? kMutedTextColor : kThreadIdle);
+    y += 26;
+
+    draw_text(panel_x + padding, y, "INPUT FLOW", kTextColor);
+    y += 18;
+    draw_text(panel_x + padding, y, crop_text("FOCUS " + data.ui.input_focus_status, semantic_chars), focus_color(data));
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(
+            "MOUTH " + mouth_label(state) + " / MIC " + microphone_mode_label(state),
+            semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(
+            "GATE " + std::string(state.camera_gate_open ? "OPEN" : "CLOSED") +
+                " / PWR " +
+                std::to_string(static_cast<int>(data.ui.power * 100.0f) / 100.0f),
+            semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text("SCHED " + data.ui.scheduler_state, semantic_chars),
+        kMutedTextColor);
+    y += 26;
+
+    draw_text(panel_x + padding, y, "SINGLE-THREAD CHAIN", kTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(snapshot.single_thread_chain_path, semantic_chars),
+        snapshot.single_thread_chain_active ? kTextColor : kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text("CUR " + snapshot.single_thread_chain_current, semantic_chars),
+        snapshot.single_thread_chain_active ? kTextColor : kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text("NXT " + snapshot.single_thread_chain_next, semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text("ST  " + snapshot.single_thread_chain_status, semantic_chars),
+        kMutedTextColor);
+    y += 26;
+
+    draw_text(panel_x + padding, y, "PARENT FLOW RECORDS", kTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(orchestration_headline(snapshot.human_behavior_flow), semantic_chars),
+        snapshot.human_behavior_flow.active ? kTextColor : kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(orchestration_detail(snapshot.human_behavior_flow), semantic_chars),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(orchestration_headline(snapshot.particle_root_flow), semantic_chars),
+        snapshot.particle_root_flow.active ? kTextColor : kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_x + padding,
+        y,
+        crop_text(orchestration_detail(snapshot.particle_root_flow), semantic_chars),
+        kMutedTextColor);
+    y += 24;
 
     draw_text(panel_x + padding, y, "THREADS", kTextColor);
     y += 22;
     for (std::size_t index = 0; index < snapshot.threads.size(); ++index) {
         const RuntimeThread& thread = snapshot.threads[index];
         const SDL_Rect row = make_rect(panel_x + padding, y, panel_w - padding * 2, 64);
+        const int thread_line_width =
+            std::max(8, (row.w - 48) / (kGlyphAdvance * kFontScale));
         fill_rect(row, kPanelAlt);
         stroke_rect(row, thread_state_color(thread.state));
         fill_rect(make_rect(row.x + 6, row.y + 6, 24, row.h - 12), thread_state_color(thread.state));
-        draw_text(row.x + 40, row.y + 8, "T" + std::to_string(thread.id) + " " + thread_state_label(thread.state), kTextColor);
+        draw_text(
+            row.x + 40,
+            row.y + 8,
+            crop_text(
+                "T" + std::to_string(thread.id) + " " +
+                    thread_state_label(thread.state) + " " +
+                    thread_role_label(thread),
+                thread_line_width),
+            kTextColor);
         draw_text(row.x + 40, row.y + 24,
-            ("RUN " + thread.bound_task_name).substr(0, std::min<std::size_t>(thread.bound_task_name.size() + 4, 24)),
+            crop_text(thread_active_semantic_line(thread), thread_line_width),
             kMutedTextColor);
         draw_text(row.x + 40, row.y + 40,
-            ("EV " + thread.last_task_event + " / " + thread.last_completed_task_name)
-                .substr(0, 30),
+            crop_text(
+                "EV " + thread.last_task_event + " / " +
+                    thread_last_semantic_line(thread),
+                thread_line_width),
             kMutedTextColor);
         y += 74;
     }
     y -=280;
-    draw_text(padding, y, "PARTICLES", kTextColor);
+    const int panel_left = panel_x + padding;
+    draw_text(panel_left, y, "PARTICLES", kTextColor);
     y += 20;
-    draw_text(padding, y, "REMAIN " + std::to_string(data.ui.remaining_particles), kMutedTextColor);
+    draw_text(panel_left, y, "REMAIN " + std::to_string(data.ui.remaining_particles), kMutedTextColor);
     y += 18;
-    draw_text(padding, y, "QUEUED " + std::to_string(data.ui.queued_particle_tasks), kMutedTextColor);
+    draw_text(panel_left, y, "QUEUED " + std::to_string(data.ui.queued_particle_tasks), kMutedTextColor);
     y += 18;
-    const SDL_Rect remain_bar = make_rect(padding, y, panel_w - padding * 2, 16);
+    draw_text(
+        panel_left,
+        y,
+        "MOVE q" + std::to_string(snapshot.p3_move_queued) +
+            " r" + std::to_string(snapshot.p3_move_running),
+        kMutedTextColor);
+    y += 18;
+    draw_text(
+        panel_left,
+        y,
+        "FADE q" + std::to_string(snapshot.p3_fade_queued) +
+            " r" + std::to_string(snapshot.p3_fade_running),
+        kMutedTextColor);
+    y += 18;
+    const SDL_Rect remain_bar = make_rect(panel_left, y, panel_w - padding * 2, 16);
     fill_rect(remain_bar, SDL_Color{45, 55, 67, 255});
     const int total_particles = std::max(1, static_cast<int>(data.particles.size()));
     fill_rect(
         make_rect(remain_bar.x, remain_bar.y, remain_bar.w * data.ui.remaining_particles / total_particles, remain_bar.h),
         kParticleAttached);
     y += 24;
-    const SDL_Rect queued_bar = make_rect(padding, y, panel_w - padding * 2, 16);
+    const SDL_Rect queued_bar = make_rect(panel_left, y, panel_w - padding * 2, 16);
     fill_rect(queued_bar, SDL_Color{45, 55, 67, 255});
     fill_rect(
         make_rect(queued_bar.x, queued_bar.y, std::min(queued_bar.w, data.ui.queued_particle_tasks * 18), queued_bar.h),
         kParticleFlying);
     y += 32;
 
-    draw_text(padding, y, "TASK STATUS", kTextColor);
+    draw_text(panel_left, y, "LEAF TASK STATUS", kTextColor);
     y += 20;
     const int task_line_width = std::max(0, (panel_w - padding * 2) / (kGlyphAdvance * kFontScale));
-    auto crop_line = [task_line_width](const std::string& text) {
-        if (task_line_width <= 0 || static_cast<int>(text.size()) <= task_line_width) {
-            return text;
-        }
-        if (task_line_width <= 3) {
-            return text.substr(0, static_cast<std::size_t>(task_line_width));
-        }
-        return text.substr(0, static_cast<std::size_t>(task_line_width - 3)) + "...";
-    };
-    draw_text(padding, y, crop_line("FOC " + data.ui.input_focus_status), focus_color(data));
+    draw_text(panel_left, y, crop_text("FOC " + data.ui.input_focus_status, task_line_width), focus_color(data));
     y += 18;
-    draw_text(padding, y, crop_line("CAM " + data.ui.camera_task_status), kMutedTextColor);
+    draw_text(panel_left, y, crop_text("CAM " + data.ui.camera_task_status, task_line_width), kMutedTextColor);
     y += 18;
-    draw_text(padding, y, crop_line("MIC " + data.ui.microphone_task_status), kMutedTextColor);
+    draw_text(panel_left, y, crop_text("MIC " + data.ui.microphone_task_status, task_line_width), kMutedTextColor);
     y += 18;
-    draw_text(padding, y, crop_line("GEN " + data.ui.generate_task_status), kMutedTextColor);
+    draw_text(panel_left, y, crop_text("GEN " + data.ui.generate_task_status, task_line_width), kMutedTextColor);
     y += 18;
-    draw_text(padding, y, crop_line("BAT " + data.ui.batch_task_status), kMutedTextColor);
+    draw_text(panel_left, y, crop_text("BAT " + data.ui.batch_task_status, task_line_width), kMutedTextColor);
     y += 18;
-    draw_text(padding, y, crop_line("P3  " + data.ui.particle_task_status), kMutedTextColor);
+    draw_text(panel_left, y, crop_text("P3  " + data.ui.particle_task_status, task_line_width), kMutedTextColor);
     y += 28;
 
-    draw_text(padding, y, "EVENT LOG", kTextColor);
+    draw_text(panel_left, y, "EVENT LOG", kTextColor);
     y += 20;
     const std::vector<std::string>& notes = current_runtime_notes();
     const std::size_t visible_notes = std::min<std::size_t>(notes.size(), 10);
     for (std::size_t index = 0; index < visible_notes; ++index) {
         const std::size_t note_index = notes.size() - visible_notes + index;
         draw_text(
-            padding,
+            panel_left,
             y,
-            crop_line("> " + notes[note_index]),
+            crop_text("> " + notes[note_index], task_line_width),
             index + 1 == visible_notes ? kTextColor : kMutedTextColor);
         y += 18;
     }
@@ -649,6 +1046,9 @@ void render_buttons() {
 void update_window_title(const RuntimeState& state,
                          const RenderData& data,
                          const SchedulerSnapshot& snapshot) {
+    const RuntimeThread primary_thread = snapshot.threads.empty()
+        ? RuntimeThread{}
+        : snapshot.threads.front();
     std::string title =
         "DandelionOS | " +
         std::string(runtime_phase_label(state.phase)) +
@@ -657,9 +1057,15 @@ void update_window_title(const RuntimeState& state,
         " | MIC " + microphone_mode_label(state) +
         " | PWR " + std::to_string(static_cast<int>(data.ui.power * 100.0f) / 100.0f) +
         " | P1 " + std::to_string(snapshot.p1_queue.size()) +
-        " P2 " + std::to_string(snapshot.p2_queue.size()) +
-        " P3 " + std::to_string(snapshot.p3_queue.size()) +
-        " | T1 " + snapshot.threads[0].last_task_event;
+        " P2 " + std::to_string(snapshot.p2_realtime_queue.size()) +
+        " P3 " + std::to_string(snapshot.p2_queue.size()) +
+        " P4 " + std::to_string(snapshot.p3_queue.size()) +
+        " M" + std::to_string(snapshot.p3_move_queued + snapshot.p3_move_running) +
+        " F" + std::to_string(snapshot.p3_fade_queued + snapshot.p3_fade_running) +
+        " | T1 " + primary_thread.last_task_event +
+        " " + latency_class_label_for_task(
+            primary_thread.last_completed_task_type,
+            primary_thread.last_completed_task_priority);
     if (title != g_last_window_title) {
         SDL_SetWindowTitle(g_window, title.c_str());
         g_last_window_title = title;

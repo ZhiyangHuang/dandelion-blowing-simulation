@@ -1,4 +1,5 @@
 #include "thread.h"
+#include "runtime_orchestration.h"
 #include "scheduler_task_support.h"
 
 #include <memory>
@@ -8,49 +9,24 @@ namespace {
 
 int g_dandelion_layout_revision = 0;
 
-void mark_camera_bridge_unavailable_and_stop(const std::string& status_text) {
-    CameraBridgeState unavailable_state = runtime_state().camera_bridge;
-    unavailable_state.device_unavailable = true;
-    unavailable_state.bridge_connected = false;
-    unavailable_state.sample_ready = false;
-    unavailable_state.status_text = status_text;
-    stop_camera_bridge();
-    RuntimeState& state_ref = runtime_state();
-    state_ref.camera_bridge = unavailable_state;
-    state_ref.camera_device_available = false;
-    state_ref.camera_available = false;
-}
-
-void mark_microphone_bridge_unavailable_and_stop(const std::string& status_text) {
-    MicrophoneBridgeState unavailable_state = runtime_state().microphone_bridge;
-    unavailable_state.device_unavailable = true;
-    unavailable_state.bridge_connected = false;
-    unavailable_state.sample_ready = false;
-    unavailable_state.status_text = status_text;
-    stop_microphone_bridge();
-    RuntimeState& state_ref = runtime_state();
-    state_ref.microphone_bridge = unavailable_state;
-    state_ref.microphone_device_available = false;
-    state_ref.microphone_available = false;
-}
-
 void reset_runtime_input_devices() {
+    push_runtime_note("ResetTask: stopping microphone listener.");
     stop_microphone_bridge();
+    push_runtime_note("ResetTask: stopping camera listener.");
     stop_camera_bridge();
 
+    push_runtime_note("ResetTask: starting camera listener.");
     start_camera_bridge();
+    push_runtime_note("ResetTask: starting microphone listener.");
     start_microphone_bridge();
     refresh_bridge_inputs();
 
-    RuntimeState& state_ref = runtime_state();
-    if (state_ref.camera_bridge.device_unavailable) {
-        mark_camera_bridge_unavailable_and_stop(state_ref.camera_bridge.status_text);
-        push_runtime_note("SystemTasks: camera device unavailable during reset.");
-    }
-    if (state_ref.microphone_bridge.device_unavailable) {
-        mark_microphone_bridge_unavailable_and_stop(state_ref.microphone_bridge.status_text);
-        push_runtime_note("SystemTasks: microphone device unavailable during reset.");
-    }
+    const RuntimeState& state = current_runtime_state();
+    push_runtime_note(
+        "ResetTask: listeners refreshed -> CAM " +
+        std::string(state.camera_listener.enabled ? "enabled" : "disabled") +
+        " / MIC " +
+        std::string(state.microphone_listener.enabled ? "enabled" : "disabled"));
 }
 
 }  // namespace
@@ -69,6 +45,10 @@ void PlaceholderTask::execute() {
     state = TaskState::FINISHED;
 }
 
+std::unique_ptr<Task> PlaceholderTask::clone_for_requeue() const {
+    return std::make_unique<PlaceholderTask>(*this);
+}
+
 StartTask::StartTask() {
     type = TaskType::START;
     priority = PriorityLevel::P1_SYSTEM;
@@ -83,6 +63,10 @@ void StartTask::execute() {
     state = TaskState::FINISHED;
 }
 
+std::unique_ptr<Task> StartTask::clone_for_requeue() const {
+    return std::make_unique<StartTask>(*this);
+}
+
 ResetTask::ResetTask() {
     type = TaskType::RESET;
     priority = PriorityLevel::P1_SYSTEM;
@@ -92,14 +76,22 @@ ResetTask::ResetTask() {
 
 void ResetTask::execute() {
     set_runtime_phase(RuntimePhase::RESETTING);
+    push_runtime_note("ResetTask: clearing P2/P3/P4 queues.");
+    clear_task_queue(PriorityLevel::P2_REALTIME);
     clear_task_queue(PriorityLevel::P2_FUNCTIONAL);
     clear_task_queue(PriorityLevel::P3_PARTICLE);
+    push_runtime_note("ResetTask: resetting world state.");
     reset_simulation_world();
     reset_runtime_input_devices();
     set_runtime_phase(RuntimePhase::READY);
     scheduler_task_support::seed_input_entry_task_if_idle();
-    push_runtime_note("ResetTask: world reset and input entry reseeded.");
+    scheduler_task_support::seed_mode_specific_short_listener_if_needed("reset");
+    push_runtime_note("ResetTask: world reset complete and input entry reseeded.");
     state = TaskState::FINISHED;
+}
+
+std::unique_ptr<Task> ResetTask::clone_for_requeue() const {
+    return std::make_unique<ResetTask>(*this);
 }
 
 ExitTask::ExitTask() {
@@ -110,12 +102,19 @@ ExitTask::ExitTask() {
 }
 
 void ExitTask::execute() {
+    push_runtime_note("ExitTask: stopping microphone listener.");
     stop_microphone_bridge();
+    push_runtime_note("ExitTask: stopping camera listener.");
     stop_camera_bridge();
+    push_runtime_note("ExitTask: requesting runtime shutdown.");
     request_shutdown();
     set_visualization_running(false);
-    push_runtime_note("ExitTask: shutdown requested.");
+    push_runtime_note("ExitTask: visualization loop stop requested.");
     state = TaskState::FINISHED;
+}
+
+std::unique_ptr<Task> ExitTask::clone_for_requeue() const {
+    return std::make_unique<ExitTask>(*this);
 }
 
 BreezeTask::BreezeTask() {
@@ -127,7 +126,7 @@ BreezeTask::BreezeTask() {
 
 void BreezeTask::execute() {
     bool created_particle = false;
-    with_shared_state_write(true, true, true, [&created_particle]() {
+    with_shared_state_write(true, true, true, [this, &created_particle]() {
         RuntimeState& state_ref = runtime_state();
         RenderData& data = render_data();
 
@@ -145,30 +144,52 @@ void BreezeTask::execute() {
             const int slot = spawn_slots.front();
             ParticleRenderData& particle = data.particles[static_cast<std::size_t>(slot)];
             particle.ownership_token++;
-            submit_task(make_single_particle_task(slot, 1, particle.ownership_token));
+            submit_task(make_single_particle_task(
+                slot,
+                1,
+                particle.ownership_token,
+                state_ref.world.mouth_x,
+                state_ref.world.mouth_y));
+            particle.visual_alpha = 1.0f;
             particle.active = true;
             particle.attached = false;
+            particle.fade_steps_remaining = 0;
             particle.status = "breeze-queued";
             scheduler_task_support::reconcile_particle_bookkeeping(state_ref, data);
-            data.ui.particle_task_status = "BREEZE queued fallback particle";
+            data.ui.particle_task_status = "BREEZE queued fallback P3 move task";
             created_particle = true;
         } else {
             scheduler_task_support::reconcile_particle_bookkeeping(state_ref, data);
             data.ui.particle_task_status = "BREEZE had no particle slot";
         }
 
+        runtime_orchestration::advance_particle_root_flow(
+            state_ref,
+            TaskType::BREEZE,
+            PriorityLevel::P2_FUNCTIONAL,
+            id,
+            OrchestrationNode::PARTICLE_GENERATE,
+            created_particle ? OrchestrationStatus::FALLBACK : OrchestrationStatus::COMPLETED,
+            created_particle ? OrchestrationEvent::BLOW_FALLBACK
+                             : OrchestrationEvent::PARTICLE_GENERATE_EMPTY,
+            created_particle);
+
         data.ui.generate_task_status =
-            created_particle ? "BREEZE fallback created 1 particle task"
-                             : "BREEZE fallback created 0 particle tasks";
+            created_particle ? "BREEZE fallback queued 1 P3 move task"
+                             : "BREEZE fallback queued 0 P3 move tasks";
     });
 
     if (created_particle) {
         scheduler_task_support::queue_batch_stage_if_needed();
     }
     push_runtime_note(created_particle
-        ? "BreezeTask: fallback wind queued one particle task."
-        : "BreezeTask: fallback wind ran without queuing a particle.");
+        ? "BreezeTask: fallback wind queued one P3 move task."
+        : "BreezeTask: fallback wind ran without queuing a P3 move task.");
     state = TaskState::FINISHED;
+}
+
+std::unique_ptr<Task> BreezeTask::clone_for_requeue() const {
+    return std::make_unique<BreezeTask>(*this);
 }
 
 ChangeDandelionTask::ChangeDandelionTask() {
@@ -182,7 +203,7 @@ void ChangeDandelionTask::execute() {
     ++g_dandelion_layout_revision;
     const int revision = g_dandelion_layout_revision % 3;
 
-    with_shared_state_write(true, true, true, [revision]() {
+    with_shared_state_write(true, true, true, [this, revision]() {
         RuntimeState& state_ref = runtime_state();
         RenderData& data = render_data();
 
@@ -212,6 +233,15 @@ void ChangeDandelionTask::execute() {
         data.ui.power = state_ref.world.power;
         data.ui.generate_task_status = "CHANGE rebuilt dandelion";
         data.ui.particle_task_status = "CHANGE reset particle ring";
+        runtime_orchestration::advance_particle_root_flow(
+            state_ref,
+            TaskType::CHANGE_DANDELION,
+            PriorityLevel::P2_FUNCTIONAL,
+            id,
+            OrchestrationNode::CHANGE_DANDELION,
+            OrchestrationStatus::COMPLETED,
+            OrchestrationEvent::CHANGE_DANDELION,
+            false);
 
         scheduler_task_support::rebuild_particle_ring_for_world(next_x, next_y, 100);
         scheduler_task_support::reconcile_particle_bookkeeping(state_ref, data);
@@ -220,6 +250,10 @@ void ChangeDandelionTask::execute() {
     clear_task_queue(PriorityLevel::P3_PARTICLE);
     push_runtime_note("ChangeDandelionTask: rebuilt dandelion cluster and reset particle state.");
     state = TaskState::FINISHED;
+}
+
+std::unique_ptr<Task> ChangeDandelionTask::clone_for_requeue() const {
+    return std::make_unique<ChangeDandelionTask>(*this);
 }
 
 std::unique_ptr<Task> make_placeholder_task(TaskType type,

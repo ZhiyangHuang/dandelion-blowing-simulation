@@ -1,195 +1,215 @@
 # DandelionOS
 
-一个基于 C++ 的可视化线程调度项目。当前可运行版本使用：
+DandelionOS is a C++ scheduling visualization project for an operating-systems
+course. It combines:
 
-- `main.cpp` 作为主程序入口，也是最重要的主程序
-- SDL2 负责窗口与可视化
-- Python + MediaPipe 负责摄像头嘴部检测桥接
-- C++ 原生 `waveIn` 负责麦克风输入
+- a scheduler with visible queue / lane behavior
+- an SDL visualization layer
+- a Python MediaPipe bridge for camera mouth detection
+- a native Windows microphone bridge
+- a particle world that reacts to camera and microphone input
 
-`DESIGN.md` 是系统设计说明，`README.md` 重点讲如何在另一台机器上部署和运行。
+`DESIGN.md` is the canonical architecture document.
+`PROJECT_PROGRESS.txt` is the running implementation log and next-step tracker.
 
-**主程序说明**
+## Runtime Overview
 
-`main.cpp` 是项目主入口，负责：
+The project models a human interaction loop as a scheduler-visible pipeline:
 
-- 启动运行时
-- 自动拉起 `python_mediapipe_bridge.py`
-- 驱动调度器循环
-- 打开 SDL 可视化窗口
+```text
+Camera listener
+-> CameraTask
+-> mouth-open gate
+-> Microphone listener
+-> MicrophoneTask
+-> GenerateParticleTask / BreezeTask
+-> BatchParticleExecutionTask
+-> particle move / fade drain
+-> reseed next listener entry
+```
 
-README 不再介绍测试用文件，避免和正式运行入口混淆。
+The current scheduler has four physical queues:
 
-**运行环境**
+- `P1_SYSTEM` -> `L0 System`
+- `P2_REALTIME` -> `L1 Realtime`
+- `P2_FUNCTIONAL` -> `L2 Interactive`
+- `P3_PARTICLE` -> `L3 Throughput`
 
-当前部署路径默认面向 `Windows`。
+The realtime layer is split into two listener families:
 
-原因：
+- long listeners:
+  - `CameraListenerServiceTask`
+  - `MicrophoneListenerServiceTask`
+- short listeners:
+  - `CameraListenerBurstTask`
+  - `MicrophoneListenerBurstTask`
 
-- `run_live.bat` 使用 MinGW `g++`
-- `python_mediapipe_bridge.py` 走本地摄像头
-- 麦克风桥接在 C++ 里使用 `winmm / waveIn`
+Current mode mapping:
 
-如果换到别的系统，需要自己改编译链和音频采集部分。
+```text
+1 thread  -> short + short + deterministic fixed chain
+2 threads -> camera long + microphone short + general lane
+3 threads -> camera long + microphone long + general lane
+```
 
-**异地部署步骤**
+## Repository Layout
 
-下面的步骤适合“把项目发给另一台 Windows 机器后，从零开始部署”。
+Core runtime:
 
-1. 安装基础工具
+- `main.cpp`
+- `thread.h`
+- `scheduler.cpp`
+- `scheduler_task_support.h`
 
-- 安装 `Python 3`
-- 安装 `MSYS2`
-- 在 `MSYS2` 中安装 `mingw64` 的 `g++`
-- 安装 `SDL2` 开发库，并确保它位于 `C:\msys64\mingw64`
+Task families:
 
-2. 准备 Python 依赖
+- `system_tasks.cpp`
+- `camera_task.cpp`
+- `microphone_task.cpp`
+- `particle_generation_task.cpp`
+- `particle_tasks.cpp`
 
-进入项目根目录后执行：
+Bridge / rendering / simulation:
+
+- `bridge_io.cpp`
+- `render_sdl.cpp`
+- `simulation.cpp`
+- `runtime_orchestration.cpp`
+
+Docs / verification:
+
+- `DESIGN.md`
+- `PROJECT_PROGRESS.txt`
+- `queue_verification.cpp`
+- `queue_verification_output.txt`
+
+## Environment
+
+The current repo is Windows-oriented.
+
+Assumptions:
+
+- Windows audio input through `waveIn`
+- Python available on PATH
+- MinGW from `C:\msys64\mingw64`
+- SDL2 headers and libraries under that MinGW tree
+
+Required runtime assets:
+
+- `face_landmarker.task`
+- `python_mediapipe_bridge.py`
+
+Python packages:
 
 ```powershell
 python -m pip install --upgrade pip
 python -m pip install opencv-python mediapipe
 ```
 
-3. 确认模型文件存在
+## Build and Run
 
-项目根目录必须有：
+### Live Runtime
 
-- `face_landmarker.task`
-
-这是 `python_mediapipe_bridge.py` 启动 MediaPipe Face Landmarker 时要加载的模型文件。没有它，摄像头桥接无法正常工作。
-
-4. 确认目录中保留这些运行文件
-
-部署到远端机器时，至少要带上下面这些文件：
-
-- `main.cpp`
-- `thread.h`
-- `scheduler.cpp`
-- `simulation.cpp`
-- `events.cpp`
-- `bridge_io.cpp`
-- `render_sdl.cpp`
-- `python_mediapipe_bridge.py`
-- `run_live.bat`
-- `run_mediapipe_bridge.bat`
-- `face_landmarker.task`
-- `DESIGN.md`
-- `README.md`
-
-5. 检查 `run_live.bat` 里的 MinGW 路径
-
-当前脚本默认：
-
-```bat
-set "MINGW_ROOT=C:\msys64\mingw64"
-```
-
-如果远端机器的 MSYS2 不在这个位置，请先把这个路径改成实际安装目录。
-
-6. 编译主程序
-
-在项目根目录直接运行：
+Use the provided batch script:
 
 ```powershell
 .\run_live.bat
 ```
 
-这个脚本会先编译，再启动程序。它内部实际编译的是：
+That script currently builds:
 
-```bat
-g++ -std=c++17 -Wall -Wextra -pedantic ^
-  -I"%MINGW_ROOT%\include\SDL2" ^
-  main.cpp scheduler.cpp simulation.cpp events.cpp bridge_io.cpp render_sdl.cpp ^
-  -L"%MINGW_ROOT%\lib" -lmingw32 -lSDL2main -lSDL2 ^
-  -o dandelion_live.exe
+```text
+main.cpp
+scheduler.cpp
+system_tasks.cpp
+camera_task.cpp
+microphone_task.cpp
+particle_generation_task.cpp
+particle_tasks.cpp
+simulation.cpp
+events.cpp
+bridge_io.cpp
+render_sdl.cpp
+runtime_orchestration.cpp
 ```
 
-7. 首次启动时的实际行为
+and outputs `dandelion_live.exe`.
 
-程序启动后，`main.cpp` 会自动做这些事：
+### Headless Verification
 
-- 初始化运行时
-- 创建 SDL 窗口
-- 删除旧的桥接 JSON 文件
-- 自动启动 `python_mediapipe_bridge.py`
-- 等待摄像头桥接写入第一份 `camera_bridge_latest.json`
-- 进入主调度循环
-
-8. 如果自动拉起摄像头桥接失败
-
-可以手动开一个终端，在项目目录执行：
+Build the verifier:
 
 ```powershell
-python .\python_mediapipe_bridge.py
+$env:PATH='C:\msys64\mingw64\bin;' + $env:PATH
+g++ -std=c++17 -Wall -Wextra -pedantic `
+  -I"C:\msys64\mingw64\include\SDL2" `
+  queue_verification.cpp scheduler.cpp system_tasks.cpp camera_task.cpp `
+  microphone_task.cpp particle_generation_task.cpp particle_tasks.cpp `
+  simulation.cpp events.cpp bridge_io.cpp render_sdl.cpp runtime_orchestration.cpp `
+  -L"C:\msys64\mingw64\lib" -lmingw32 -lSDL2main -lSDL2 `
+  -o queue_verification.exe
 ```
 
-然后再重新运行：
+Run it:
 
 ```powershell
-.\dandelion_live.exe
+.\queue_verification.exe
 ```
 
-或者再次直接执行：
+To also store the output:
 
 ```powershell
-.\run_live.bat
+.\queue_verification.exe | Tee-Object -FilePath queue_verification_output.txt
 ```
 
-**运行时控制**
+## Keyboard Controls
 
-SDL 窗口支持以下快捷键：
+In the SDL window:
 
-- `q` 或 `Esc`：退出
-- `r`：重置
-- `c`：切换蒲公英位置
-- `1` / `2` / `3`：切换线程模式
-- `x`：强制触发 breeze fallback
+- `q` or `Esc`: quit
+- `r`: reset
+- `c`: change dandelion layout
+- `1` / `2` / `3`: switch thread mode
+- `x`: force breeze fallback
 
-**部署检查清单**
+## What The Verifier Covers
 
-如果异地部署后无法运行，按这个顺序检查：
+Current verification includes:
 
-1. `python --version` 是否正常
-2. `opencv-python` 和 `mediapipe` 是否已经安装
-3. `face_landmarker.task` 是否在项目根目录
-4. `run_live.bat` 中的 `MINGW_ROOT` 是否正确
-5. `C:\msys64\mingw64\include\SDL2` 和 `C:\msys64\mingw64\lib` 是否存在
-6. 摄像头是否能被本机 Python/OpenCV 打开
-7. 麦克风是否被 Windows 正常识别
+- queue precedence across realtime / interactive / throughput
+- single-thread burst-entry reseed
+- single-thread full-cycle and fallback-cycle completion
+- mode collapse preserving downstream phase order
+- listener runtime snapshot bookkeeping
+- two-thread camera-long / microphone-short behavior
+- realtime slices cutting across multi-thread dispatch slots
+- microphone overlap with active particle drain
+- reset / exit preemption
+- persistent-listener hard stop on mode collapse
+- short microphone lease not auto-renewing after expiration in `2-thread`
 
-**常见问题**
+## Source-of-Truth Notes
 
-1. 双击后窗口没起来
+If documents disagree, use them in this order:
 
-先在终端里运行 `.\run_live.bat`，这样能直接看到编译错误或 Python 报错。
+1. current code behavior
+2. `DESIGN.md`
+3. `PROJECT_PROGRESS.txt`
 
-2. 编译失败，提示找不到 SDL2
+`ProjectGuideline.md` currently exists in the repo but is empty as of
+`2026-05-11`, so it does not currently add extra constraints beyond the files
+above.
 
-一般是 `MSYS2 / MinGW / SDL2` 路径不对。优先检查 `run_live.bat` 里的 `MINGW_ROOT`。
+## Preparing `v2` Branch Upload
 
-3. 程序起来了，但没有摄像头输入
+This repo contains generated binaries, object files, bridge JSON artifacts, and
+editor metadata during normal development. `.gitignore` is set up to keep those
+out of the next upload-oriented branch.
 
-先单独运行：
+Before pushing a clean `v2` branch, re-check:
 
-```powershell
-python .\python_mediapipe_bridge.py
-```
-
-看它是否缺少依赖、打不开摄像头，或者无法读取 `face_landmarker.task`。
-
-4. 程序起来了，但麦克风没有反应
-
-当前版本的麦克风输入来自 C++ 原生 `waveIn`。如果远端机器麦克风权限、驱动或默认录音设备异常，运行时就可能没有有效输入。
-
-**当前推荐的远端交付方式**
-
-最稳妥的方式不是只发 `exe`，而是把整个项目目录连同：
-
-- C++ 源码
-- Python 桥接脚本
-- `face_landmarker.task`
-- `run_live.bat`
-
-一起发给对方，然后让对方按上面的步骤配置环境并启动。因为当前版本依赖本地 Python、MediaPipe、OpenCV、SDL2 和 Windows 音频设备，单独拷贝一个 `exe` 还不足以完整运行。
+- no generated `.exe` / `.o` / `.obj` files are staged
+- no runtime bridge JSON snapshots are staged
+- no local IDE folders are staged
+- docs reflect the current scheduler semantics
+- verifier output is refreshed if you want to include it intentionally

@@ -22,6 +22,7 @@ except ImportError:
 ROOT = Path(__file__).resolve().parent
 OUT_PATH = ROOT / "camera_bridge_latest.json"
 TMP_PATH = ROOT / "camera_bridge_latest.tmp"
+CONTROL_PATH = ROOT / "camera_bridge_control.json"
 TASK_PATH = ROOT / "face_landmarker.task"
 REOPEN_DELAY_SECONDS = 1.0
 CAMERA_STARTUP_TIMEOUT_SECONDS = 3.0
@@ -40,9 +41,14 @@ def write_packet(packet: dict) -> None:
     TMP_PATH.write_text(json.dumps(packet), encoding="utf-8")
     TMP_PATH.replace(OUT_PATH)
 
-def check_control():
+def check_control(min_mtime: float = 0.0):
     try:
-        data = json.loads(Path("camera_bridge_control.json").read_text())
+        if not CONTROL_PATH.exists():
+            return None
+        stat = CONTROL_PATH.stat()
+        if stat.st_mtime < min_mtime:
+            return None
+        data = json.loads(CONTROL_PATH.read_text())
         return data.get("command")
     except:
         return None
@@ -280,6 +286,8 @@ class StableMouthBridge:
         self.camera_backend = "camera-not-open"
         self.last_open_attempt_ms = 0.0
         self.camera_wait_started_at = time.time()
+        self.process_started_at = time.time()
+        self.first_frame_started_at = 0.0
 
         self.detector = self._build_detector()
 
@@ -299,6 +307,9 @@ class StableMouthBridge:
         if self.cap is not None:
             self.cap.release()
             self.cap = None
+
+    def interrupt_allowed(self) -> bool:
+        return self.first_frame_started_at > 0.0
 
     def ensure_camera(self) -> bool:
         now = time.time()
@@ -349,7 +360,7 @@ class StableMouthBridge:
     def run(self) -> int:
         try:
             while True:
-                if check_control() == "stop":
+                if check_control(self.process_started_at) == "stop" and self.interrupt_allowed():
                     break
                 if not self.ensure_camera():
                     packet = self.camera_wait_packet()
@@ -366,6 +377,9 @@ class StableMouthBridge:
                     write_packet(packet)
                     time.sleep(0.03)
                     continue
+
+                if self.first_frame_started_at <= 0.0:
+                    self.first_frame_started_at = time.time()
 
                 packet = self.detector.process(frame)
                 self.update_hysteresis(packet)

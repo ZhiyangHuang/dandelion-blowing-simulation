@@ -31,15 +31,14 @@ int main() {
     auto last_render = std::chrono::steady_clock::now();
 
     while (!shutdown_requested() && visualization_running()) {
-
-        // 1. 输入：尽可能快
+        // Keep SDL input and bridge refresh hot so reset/quit controls stay responsive.
         process_visual_input();
 
-        // 2. 逻辑：尽可能快（或独立频率）
+        // Advance scheduler state continuously while the runtime is alive.
         scheduler_tick();
 
-        // 3. 渲染：严格 33ms 一次
-        auto now = std::chrono::steady_clock::now();
+        // Render at a stable cadence while control and scheduling continue every loop.
+        const auto now = std::chrono::steady_clock::now();
         if (now - last_render >= kLoopDelay) {
             render_visual_frame();
             last_render = now;

@@ -24,7 +24,8 @@ const char* kCameraBridgePath = "camera_bridge_latest.json";
 const char* kCameraControlPath = "camera_bridge_control.json";
 const char* kMicrophoneBridgePath = "microphone_bridge_latest.json";
 
-void load_camera_bridge_from_json(const std::string& payload);
+CameraBridgeState parse_camera_bridge_from_json(const std::string& payload);
+MicrophoneBridgeState parse_microphone_bridge_from_json(const std::string& payload);
 
 CameraBridgeState camera_bridge_disabled_state(const std::string& status_text) {
     CameraBridgeState state;
@@ -83,6 +84,144 @@ std::size_t skip_json_ws(const std::string& text, std::size_t index) {
         ++index;
     }
     return index;
+}
+
+long long wall_clock_ms() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+        .count();
+}
+
+bool sample_is_fresh(long long timestamp_ms, long long freshness_window_ms) {
+    if (timestamp_ms <= 0) {
+        return false;
+    }
+    const long long age_ms = wall_clock_ms() - timestamp_ms;
+    return age_ms >= 0 && age_ms <= freshness_window_ms;
+}
+
+bool camera_snapshot_has_open_mouth(const CameraBridgeState& snapshot) {
+    return snapshot.bridge_connected &&
+        snapshot.sample_ready &&
+        !snapshot.device_unavailable &&
+        sample_is_fresh(snapshot.timestamp_ms, 1500) &&
+        snapshot.face_detected &&
+        snapshot.mouth_open_state &&
+        snapshot.looking_forward;
+}
+
+void sync_camera_bridge_state(bool listener_enabled,
+                              bool bridge_running,
+                              const CameraBridgeState& snapshot) {
+    RuntimeState& state = runtime_state();
+    const long long now_ms = wall_clock_ms();
+    state.camera_listener.enabled = listener_enabled;
+    state.camera_listener.bridge_running = listener_enabled && bridge_running;
+    state.camera_listener.device_available =
+        listener_enabled && snapshot.bridge_connected && !snapshot.device_unavailable;
+    state.camera_listener.sample_ready = listener_enabled && snapshot.sample_ready;
+    state.camera_listener.stale =
+        !listener_enabled || !sample_is_fresh(snapshot.timestamp_ms, 1500);
+    state.camera_listener.unavailable =
+        listener_enabled && snapshot.device_unavailable;
+
+    if (!listener_enabled) {
+        state.camera_listener.started_at_ms = 0;
+        state.camera_listener.first_mouth_seen_at_ms = 0;
+        state.camera_listener.last_seen_sample_ms = 0;
+        state.camera_listener.last_seeded_sample_ms = 0;
+        state.camera_listener.last_consumed_sample_ms = 0;
+    } else {
+        if (snapshot.bridge_connected &&
+            snapshot.sample_ready &&
+            snapshot.timestamp_ms > 0) {
+            state.camera_listener.last_seen_sample_ms = snapshot.timestamp_ms;
+        }
+        if (state.camera_listener.device_available) {
+            if (state.camera_listener.started_at_ms <= 0) {
+                state.camera_listener.started_at_ms = now_ms;
+            }
+        } else {
+            state.camera_listener.started_at_ms = 0;
+            state.camera_listener.first_mouth_seen_at_ms = 0;
+        }
+
+        if (camera_snapshot_has_open_mouth(snapshot) &&
+            state.camera_listener.first_mouth_seen_at_ms <= 0) {
+            state.camera_listener.first_mouth_seen_at_ms = now_ms;
+        }
+    }
+
+    state.camera_bridge = snapshot;
+    state.camera_device_available = state.camera_listener.device_available;
+    state.camera_available =
+        listener_enabled && state.camera_listener.first_mouth_seen_at_ms > 0;
+}
+
+void sync_microphone_bridge_state(bool listener_enabled,
+                                  bool bridge_running,
+                                  const MicrophoneBridgeState& snapshot) {
+    RuntimeState& state = runtime_state();
+    state.microphone_listener.enabled = listener_enabled;
+    state.microphone_listener.bridge_running = listener_enabled && bridge_running;
+    state.microphone_listener.device_available =
+        listener_enabled && snapshot.bridge_connected && !snapshot.device_unavailable;
+    state.microphone_listener.sample_ready = listener_enabled && snapshot.sample_ready;
+    state.microphone_listener.stale =
+        !listener_enabled || !sample_is_fresh(snapshot.timestamp_ms, 1200);
+    state.microphone_listener.unavailable =
+        listener_enabled && snapshot.device_unavailable;
+
+    state.microphone_bridge = snapshot;
+    state.microphone_device_available = state.microphone_listener.device_available;
+    if (!listener_enabled) {
+        state.microphone_available = false;
+        state.microphone_listener.last_seen_sample_ms = 0;
+        state.microphone_listener.last_seeded_sample_ms = 0;
+        state.microphone_listener.last_consumed_sample_ms = 0;
+    } else if (snapshot.bridge_connected &&
+               snapshot.sample_ready &&
+               snapshot.timestamp_ms > 0) {
+        state.microphone_listener.last_seen_sample_ms = snapshot.timestamp_ms;
+    }
+    state.microphone_listener.last_consumed_sample_ms =
+        state.last_consumed_microphone_sample_ms;
+}
+
+void set_camera_bridge_runtime_enabled(bool enabled, const std::string& status_text) {
+    CameraBridgeState snapshot{};
+    snapshot.bridge_connected = false;
+    snapshot.sample_ready = false;
+    snapshot.device_unavailable = false;
+    snapshot.face_detected = false;
+    snapshot.mouth_open_state = false;
+    snapshot.looking_forward = false;
+    snapshot.mouth_center_x = runtime_state().world.mouth_x;
+    snapshot.mouth_center_y = runtime_state().world.mouth_y;
+    snapshot.confidence = 0.0f;
+    snapshot.jaw_open_score = 0.0f;
+    snapshot.mouth_open_ratio = 0.0f;
+    snapshot.timestamp_ms = 0;
+    snapshot.backend = enabled ? "camera-listener" : "camera-listener-disabled";
+    snapshot.status_text = status_text;
+    sync_camera_bridge_state(enabled, false, snapshot);
+}
+
+void set_microphone_bridge_runtime_enabled(bool enabled, const std::string& status_text) {
+    MicrophoneBridgeState snapshot{};
+    snapshot.bridge_connected = false;
+    snapshot.sample_ready = false;
+    snapshot.device_unavailable = false;
+    snapshot.voice_detected = false;
+    snapshot.fallback_requested = false;
+    snapshot.suggested_power = 0.1f;
+    snapshot.direction_x = 0.0f;
+    snapshot.direction_y = -1.0f;
+    snapshot.confidence = 0.0f;
+    snapshot.timestamp_ms = 0;
+    snapshot.backend = enabled ? "microphone-listener" : "microphone-listener-disabled";
+    snapshot.status_text = status_text;
+    sync_microphone_bridge_state(enabled, false, snapshot);
 }
 
 #if defined(_WIN32)
@@ -186,6 +325,11 @@ bool launch_camera_bridge_process(ChildProcess& child) {
             candidate.command_line.end());
         command_line.push_back(L'\0');
 
+        std::wstring debug_exe = candidate.executable_path;
+        std::wstring debug_cmd = candidate.command_line;
+
+        OutputDebugStringW((L"[Bridge Launch EXE] " + debug_exe + L"\n").c_str());
+        OutputDebugStringW((L"[Bridge Launch CMD] " + debug_cmd + L"\n").c_str());
         const BOOL started = CreateProcessW(
             candidate.executable_path.c_str(),
             command_line.data(),
@@ -202,6 +346,7 @@ bool launch_camera_bridge_process(ChildProcess& child) {
             last_label = candidate.label;
             continue;
         }
+        push_runtime_note("Python started: " + candidate.label);
 
         child.process_info = process_info;
         child.running = true;
@@ -275,21 +420,22 @@ public:
         return enabled_;
     }
 
+    bool running() const {
+        return process_.running;
+    }
+
     bool refresh(CameraBridgeState& out_state) {
         if (!enabled_) {
             out_state = camera_bridge_disabled_state("camera bridge disabled");
             return true;
         }
 
-        if (!child_process_alive(process_)) {
-            ensure_process();
-        }
+        child_process_alive(process_);
 
         const std::string payload = read_text_file_if_exists(kCameraBridgePath);
 
         if (!payload.empty()) {
-            load_camera_bridge_from_json(payload);
-            out_state = runtime_state().camera_bridge;
+            out_state = parse_camera_bridge_from_json(payload);
             return true;
         }
 
@@ -488,7 +634,7 @@ private:
                                      std::chrono::system_clock::now().time_since_epoch())
                                      .count();
 
-        const bool silence = rms < 0.01;
+        const bool silence = rms < 0.02;
         const bool breath_like = !silence && zcr > 0.18;
         const bool voiced = !silence && !breath_like;
 
@@ -754,7 +900,7 @@ std::string parse_json_string(const std::string& text,
     return text.substr(begin + 1, end - begin - 2);
 }
 
-void load_camera_bridge_from_json(const std::string& payload) {
+CameraBridgeState parse_camera_bridge_from_json(const std::string& payload) {
     CameraBridgeState parsed{};
     parsed.bridge_connected = parse_json_bool(payload, "bridge_connected", true);
     parsed.sample_ready = parse_json_bool(payload, "sample_ready", true);
@@ -770,12 +916,10 @@ void load_camera_bridge_from_json(const std::string& payload) {
     parsed.timestamp_ms = parse_json_int64(payload, "timestamp_ms", 0);
     parsed.backend = parse_json_string(payload, "backend", "camera-json-bridge");
     parsed.status_text = parse_json_string(payload, "status_text", "camera bridge packet received");
-
-    runtime_state().camera_bridge = parsed;
-    runtime_state().camera_device_available = parsed.bridge_connected && !parsed.device_unavailable;
+    return parsed;
 }
 
-void load_microphone_bridge_from_json(const std::string& payload) {
+MicrophoneBridgeState parse_microphone_bridge_from_json(const std::string& payload) {
     MicrophoneBridgeState parsed{};
     parsed.bridge_connected = parse_json_bool(payload, "bridge_connected", true);
     parsed.sample_ready = parse_json_bool(payload, "sample_ready", true);
@@ -789,9 +933,7 @@ void load_microphone_bridge_from_json(const std::string& payload) {
     parsed.timestamp_ms = parse_json_int64(payload, "timestamp_ms", 0);
     parsed.backend = parse_json_string(payload, "backend", "microphone-json-bridge");
     parsed.status_text = parse_json_string(payload, "status_text", "microphone bridge packet received");
-
-    runtime_state().microphone_bridge = parsed;
-    runtime_state().microphone_device_available = parsed.bridge_connected && !parsed.device_unavailable;
+    return parsed;
 }
 
 }  // namespace
@@ -834,12 +976,9 @@ void set_camera_bridge_enabled(bool enabled) {
     (void)enabled;
 #endif
 
-    RuntimeState& state_ref = runtime_state();
-    state_ref.camera_bridge = enabled
-        ? camera_bridge_disabled_state("camera bridge starting")
-        : camera_bridge_disabled_state("camera bridge disabled");
-    state_ref.camera_device_available = false;
-    state_ref.camera_available = false;
+    set_camera_bridge_runtime_enabled(
+        enabled,
+        enabled ? "camera listener starting" : "camera listener disabled");
 }
 
 void set_microphone_bridge_enabled(bool enabled) {
@@ -854,12 +993,9 @@ void set_microphone_bridge_enabled(bool enabled) {
     }
 #endif
 
-    if (!enabled) {
-        RuntimeState& state_ref = runtime_state();
-        state_ref.microphone_bridge = microphone_bridge_disabled_state("microphone-bridge-disabled");
-        state_ref.microphone_device_available = false;
-        state_ref.microphone_available = false;
-    }
+    set_microphone_bridge_runtime_enabled(
+        enabled,
+        enabled ? "microphone listener starting" : "microphone listener disabled");
 }
 
 bool camera_bridge_enabled() {
@@ -878,38 +1014,39 @@ void refresh_bridge_inputs() {
     CameraBridgeState cam_state;
 #if defined(_WIN32)
     if (g_camera.refresh(cam_state)) {
-        runtime_state().camera_bridge = cam_state;
-        runtime_state().camera_device_available =
-            cam_state.bridge_connected && !cam_state.device_unavailable;
+        sync_camera_bridge_state(g_camera.enabled(), g_camera.running(), cam_state);
     }
 #else
-    runtime_state().camera_bridge = camera_bridge_disabled_state("camera bridge unsupported");
-    runtime_state().camera_device_available = false;
+    sync_camera_bridge_state(false, false, camera_bridge_disabled_state("camera bridge unsupported"));
 #endif
 
     if (!g_microphone_enabled) {
-        runtime_state().microphone_bridge =
-            microphone_bridge_disabled_state("microphone-bridge-disabled");
-        runtime_state().microphone_device_available = false;
+        sync_microphone_bridge_state(
+            false,
+            false,
+            microphone_bridge_disabled_state("microphone listener disabled"));
         return;
     }
 
     const std::string microphone_payload = read_text_file_if_exists(kMicrophoneBridgePath);
     if (!microphone_payload.empty()) {
-        load_microphone_bridge_from_json(microphone_payload);
+        sync_microphone_bridge_state(
+            true,
+            true,
+            parse_microphone_bridge_from_json(microphone_payload));
         return;
     }
 
 #if defined(_WIN32)
     MicrophoneBridgeState native_state;
     if (native_microphone_bridge().refresh(native_state)) {
-        runtime_state().microphone_bridge = native_state;
-        runtime_state().microphone_device_available = native_state.bridge_connected;
+        sync_microphone_bridge_state(true, true, native_state);
         return;
     }
 #endif
 
-    runtime_state().microphone_bridge =
-        microphone_bridge_disabled_state("microphone-bridge-unavailable");
-    runtime_state().microphone_device_available = false;
+    sync_microphone_bridge_state(
+        true,
+        false,
+        microphone_bridge_disabled_state("microphone-bridge-unavailable"));
 }

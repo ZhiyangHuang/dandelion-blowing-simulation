@@ -30,9 +30,11 @@ void rebuild_particle_ring(int count) {
         particle.id = index + 1;
         particle.x = center_x + std::cos(angle) * radius;
         particle.y = center_y + std::sin(angle) * radius;
+        particle.visual_alpha = 1.0f;
         particle.attached = true;
         particle.active = false;
         particle.ownership_token = 0;
+        particle.fade_steps_remaining = 0;
         g_render_data.particles.push_back(particle);
     }
 }
@@ -166,6 +168,10 @@ void reset_simulation_world() {
         g_runtime_state.camera_gate_until_ms = 0;
         g_runtime_state.microphone_focus_until_ms = 0;
         g_runtime_state.last_consumed_microphone_sample_ms = 0;
+        g_runtime_state.human_behavior_flow = OrchestrationRecord{"HumanBehaviorTask"};
+        g_runtime_state.particle_root_flow = OrchestrationRecord{"ParticleRootTask"};
+        g_runtime_state.camera_listener = CameraListenerState{};
+        g_runtime_state.microphone_listener = MicrophoneListenerState{};
         g_runtime_state.camera_bridge = CameraBridgeState{};
         g_runtime_state.microphone_bridge = MicrophoneBridgeState{};
 
