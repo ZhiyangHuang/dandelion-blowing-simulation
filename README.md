@@ -325,17 +325,3 @@ If documents disagree, use them in this order:
 2. `DESIGN.md`
 3. `PROJECT_PROGRESS.txt`
 4. `ProjectGuideline.md`
-
-## Preparing `v4` Branch Upload
-
-This repo contains generated binaries, object files, bridge JSON artifacts, and
-editor metadata during normal development. `.gitignore` is set up to keep those
-out of the next upload-oriented branch.
-
-Before pushing a clean `v4` branch, re-check:
-
-- no generated `.exe` / `.o` / `.obj` files are staged
-- no runtime bridge JSON snapshots are staged
-- no local IDE folders are staged
-- docs reflect the current scheduler semantics
-- verifier output is refreshed if you want to include it intentionally
